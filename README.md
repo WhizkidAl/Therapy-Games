@@ -35,6 +35,10 @@ Planned subcategories:
 - `reading-comprehension/`
 - `written-language/`
 
+Current resource:
+
+- **Picture words — CVC practice**: 30 pictured single-letter CVC words, building, first/final sounds, I Spy, word meanings, and optional browser-local word/sound recordings. File: `literacy/phonological-awareness/cvc-picture-words.html`.
+
 ### 3. Social-Emotional
 
 Primary folder: `social-emotional/`
