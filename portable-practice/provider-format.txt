@@ -1,0 +1,46 @@
+PROVIDER-OWNED RESOURCE LINKS
+Each provider stores and maintains its materials, arranges family access and supplies one stable link. Family Drive is for admin documents and small agreed supports, not a central provider materials store.
+
+PROVIDER ACTIVITY AND CALENDAR FORMAT
+Use one consistent symbol AND the written discipline name: Speech 💬; OT 💪; PBS 🌱; School 🏫; Support worker 🤝; Tutor 📝 if involved. Agree symbols with the family. Keep them consistent across resources, appointments and START.
+
+CHILD-FACING ACTIVITY
+CHOICE: [symbol + exact activity name]
+OPEN: [direct HTTPS activity link]
+OR FIND IT: [paper folder name/colour, section and exact location]
+YOU NEED: [materials]
+DO: [2-3 short directions, with pictures or a demonstration]
+FINISHED: [clear manageable stopping point]
+TIME: [recommended amount, usually within a 15-minute practice window; longer if chosen]
+HELP: [how to ask for help, pause or choose an easier version]
+
+PROVIDER NOTES
+Provider name and service: [...]
+Aim: [...]
+Recommended practices per week: [...]
+Family-agreed target: [number or TBC]
+Week starts Monday: [date]
+Week ends Sunday: [date]
+Demonstrated to child/family: [date or waiting to be shown]
+Adult support and consistent cues: [...]
+Simplify or pause: [...]
+Review date: [...]
+
+Recommend a frequency; the family sets the active target in Family setup > Weekly frequency and practice choices > Save setup. Blank is TBC, not zero. New weekly counts start on Monday; earlier weeks remain. Keep full instructions with the activity so the parent only needs to enter its frequency in START.
+
+COMPLETION
+For a resource opened from START: return to the same START file/browser > Finished or need help > answer the three picture questions > Finished. For a separate paper/offline activity: START > I did an offline activity > choose its picture > questions > Finished. For a whole paper routine: open Morning or Afternoon routine > I finished on paper. A whole routine is one activity; do not claim a coin for each step as well.
+Reported outside/offline work waits at START > Coin collection > Parent checks > Check and approve. A parent enters the agreed code privately. One whole approved activity adds one coin. Stopped saves feedback without a coin. Difficulty or needing help does not cancel a completed activity's coin. Opening a website is not verified completion. Built-in checked word work has its own completion rule; outside programmes do not send automatic completion data to START.
+
+ACTUAL APPOINTMENT - CALENDAR
+Title: [symbol] [discipline] - [provider] - [appointment]
+When: [date, time, duration, timezone]
+JOIN OR GO TO: [telehealth Join link or physical address]
+WITH: [name and discipline]
+WE WILL: [short child-friendly description]
+YOU NEED: [materials]
+FINISHED: [clear stopping point]
+OPEN: [resource link if needed]
+HELP: [support arrangement]
+
+Practice reminders direct the child back to START to choose. Weekly recommendations do not require artificial appointment bookings. Parent folder, calendar and report access are separate. Do not put passwords or approval codes in team materials. Reports capture recorded participation and support, not clinical progress.
