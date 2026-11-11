@@ -4,6 +4,18 @@
 **Last reviewed:** 11 November 2026  
 **Purpose:** One dependable reference for the Whiz Kids web tools and their shared Supabase backend. This file is **not** a clinical therapy plan or a claim that every listed module is released.
 
+## Deployment update — 11 November 2026 (evening)
+
+- The **generic Multiple Oppositions clinician workspace** is deployed at [Therapy-Games / Speech & Language / Speech Sounds](https://whizkidal.github.io/Therapy-Games/speech-language/speech-sounds/multiple-oppositions.html), separate from Track. The Therapy-Games homepage links to it.
+- GitHub Actions successfully verified the **actual published HTML address**, HTTP 200, `text/html`, clinician sign-in controls, response entry and absence of real child names.
+- A Chromium browser test using **simulated** Supabase Auth/PostgREST responses passed client, program, session, cold probe, modelled response, listening and PA, five-attempt treatment, refresh and export.
+- The **actual Supabase database** passed authenticated clinician create/read/update/delete, and an existing parent account could not view clinician-owned therapy records. These tests were run in transactions and rolled back.
+- All four therapy tables now have **restrictive clinician-role** policies in addition to owner-only policies. Existing Track data/tables were not changed.
+- **Outstanding:** A genuine email-link login on the live Therapy-Games website followed by a persisted and reopened synthetic clinical session. Until then, this is a deployed **clinician pilot**, not a fully accepted clinical production system.
+- Obsolete Track and Edge Function therapy-console URLs have been changed to redirect to the Therapy-Games address; the existing Track homepage remains the tracking product.
+
+The older snapshot under section 4 below is retained for change history; this deployment update is the current status.
+
 ## 1. Decisions already made
 
 - **Track @ Whiz Kids** is the browser application for shared tracking workflows (e.g. whole-day participation and regulation). Its code repository is `WhizkidAl/Track-WhizKids`.
