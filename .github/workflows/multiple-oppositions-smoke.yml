@@ -1,0 +1,42 @@
+name: Multiple Oppositions hosted page smoke test
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'speech-language/speech-sounds/multiple-oppositions.html'
+      - '.github/workflows/multiple-oppositions-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  hosted-html:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify public HTML response from GitHub Pages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import time, urllib.request
+          url="https://whizkidal.github.io/Therapy-Games/speech-language/speech-sounds/multiple-oppositions.html"
+          last=""
+          for attempt in range(15):
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"WhizKids-Clinical-SmokeTest/1.0","Cache-Control":"no-cache"}),timeout=15) as response:
+                      status=response.status
+                      typ=response.headers.get("Content-Type","")
+                      body=response.read().decode("utf-8")
+                  checks={"http_ok":status==200,"html_content_type":"text/html" in typ.lower(),
+                          "page_title":"Multiple Oppositions Clinical Workspace" in body,
+                          "clinician_login":'id="magicBtn"' in body,
+                          "clinical_capture":'id="saveTrialBtn"' in body,
+                          "no_real_child":"Sakharov" not in body and "Daniel" not in body}
+                  if all(checks.values()):
+                      print("PASS hosted page status/content/structure: "+str(checks))
+                      raise SystemExit(0)
+                  last=str(checks)
+              except Exception as exc:
+                  last=f"{type(exc).__name__}: {exc}"
+              print("Attempt",attempt+1,"failed:",last)
+              time.sleep(12)
+          raise SystemExit("FAIL hosted page: "+last)
+          PY
