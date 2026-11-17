@@ -30,6 +30,15 @@
   let doneStrats = { key: false, show: false, way: false };
   let fly = null;
   let returnTo = 'home';
+  let table = [];
+  let hunt = null;
+  let turn = 'daniel';
+  let hands = { daniel: [], dad: [] };
+  let findStep = 'play';
+  let openUid = null;
+  let findTimer = 0;
+  let dealing = false;
+  let talk = { text: '', who: 'pup' };
 
   function load() {
     let saved = null;
@@ -44,6 +53,9 @@
     if (!Array.isArray(saved.ratings)) saved.ratings = [];
     if (!saved.roundsOn) saved.roundsOn = { 1: true, 2: true, 3: true };
     if (typeof saved.practiceWord !== 'string') saved.practiceWord = '';
+    if (!saved.findOn) saved.findOn = { ell: true, ill: false, in: false };
+    if (saved.findCount !== 2) saved.findCount = 1;
+    if (typeof saved.muted !== 'boolean') saved.muted = false;
     if (saved.sessions.length === 0 && saved.attempts.length) {
       saved.sessions.push({
         id: 'earlier',
@@ -173,19 +185,150 @@
   function whenLabel(iso) {
     return new Date(iso).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
   }
+  function say(lines) {
+    const last = lines[lines.length - 1];
+    talk = { text: last.text, who: last.who, screen: screen };
+    if (store.muted || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const voices = window.speechSynthesis.getVoices();
+      const au = voices.find((item) => /en-AU/i.test(item.lang)) || voices.find((item) => /^en/i.test(item.lang));
+      lines.forEach((line) => {
+        const utter = new SpeechSynthesisUtterance(line.text);
+        utter.lang = 'en-AU';
+        utter.rate = 0.95;
+        if (au) utter.voice = au;
+        window.speechSynthesis.speak(utter);
+      });
+    } catch (error) { /* this browser has no speech */ }
+  }
+  function showTalk() {
+    const node = $('talk');
+    if (!node) return;
+    if (!talk.text || talk.screen !== screen) {
+      node.hidden = true;
+      return;
+    }
+    node.hidden = false;
+    node.className = 'talk ' + (talk.who === 'pig' ? 'pig' : 'pup');
+    node.textContent = talk.text;
+  }
+  function familiesInPlay() {
+    const chosen = words.sets.filter((item) => store.findOn[item.id]);
+    const count = store.findCount === 2 ? 2 : 1;
+    const list = (chosen.length ? chosen : [words.sets[0]]).slice(0, count);
+    return list.length ? list : [words.sets[0]];
+  }
+  function beginFind() {
+    clearTimeout(findTimer);
+    const deck = [];
+    familiesInPlay().forEach((group) => group.words.forEach((item) => deck.push(item)));
+    table = shuffle(deck).map((item, index) => ({
+      uid: item.id + '-' + index,
+      item: item,
+      down: false,
+      gone: false,
+      n: index + 1
+    }));
+    hands = { daniel: [], dad: [] };
+    turn = 'daniel';
+    openUid = null;
+    hunt = null;
+    current = null;
+    findStep = 'deal';
+    dealing = true;
+    roundNo = 1;
+    screen = 'r1';
+    carriages = [];
+    say([{ text: 'Look at the cards!', who: 'pig' }]);
+    render();
+    findTimer = setTimeout(() => {
+      if (screen !== 'r1' || findStep !== 'deal') return;
+      dealing = false;
+      table.forEach((card) => { card.down = true; });
+      nextHunt(true);
+    }, reduce ? 300 : 1600);
+  }
+  function nextHunt(first) {
+    const left = table.filter((card) => !card.gone);
+    if (!left.length) {
+      findStep = 'over';
+      const daniel = hands.daniel.length;
+      const dad = hands.dad.length;
+      let text = 'A draw! You both did so well.';
+      if (daniel > dad) text = 'Daniel wins! You both did so well.';
+      if (dad > daniel) text = 'Dad wins! You both did so well.';
+      say([{ text: text, who: 'pig' }]);
+      render();
+      return;
+    }
+    hunt = left[Math.floor(Math.random() * left.length)].item;
+    findStep = 'play';
+    openUid = null;
+    current = null;
+    const whoLine = turn === 'daniel' ? "Daniel's go!" : "Dad's go!";
+    say([
+      { text: first ? "Daniel's go!" : whoLine, who: turn === 'daniel' ? 'pig' : 'pup' },
+      { text: 'Find ' + showName(hunt.id) + '!', who: 'pup' }
+    ]);
+    render();
+  }
+  function passTurn() {
+    turn = turn === 'daniel' ? 'dad' : 'daniel';
+    findStep = 'play';
+    openUid = null;
+    say([
+      { text: turn === 'daniel' ? "Daniel's go!" : "Dad's go!", who: turn === 'daniel' ? 'pig' : 'pup' },
+      { text: 'Turn over a card.', who: 'pup' }
+    ]);
+    render();
+  }
+  function onFindTap(uid) {
+    if (screen !== 'r1') return;
+    const card = table.find((item) => item.uid === uid);
+    if (!card || card.gone) return;
+    if (findStep === 'miss') {
+      if (card.uid !== openUid) return;
+      card.down = true;
+      passTurn();
+      return;
+    }
+    if (findStep !== 'play') return;
+    card.down = false;
+    openUid = card.uid;
+    if (hunt && card.item.id === hunt.id) {
+      findStep = 'mark';
+      current = card.item;
+      say([{ text: 'Yay! You got it!', who: 'pig' }]);
+      render();
+      return;
+    }
+    findStep = 'miss';
+    say([{ text: 'Uh oh! What word is it?', who: 'pup' }]);
+    render();
+  }
 
   function drawTrain() {
     const box = $('train');
     box.replaceChildren();
     const cars = h('div', { class: 'cars' });
+    const groups = [[], [], [], []];
+    const live = screen === 'r1' || screen === 'r2' || screen === 'r3' || screen === 'yay';
+    if (live && roundNo === 1 && (hands.daniel.length || hands.dad.length)) {
+      hands.daniel.forEach((id, index) => groups[index % 2].push(id));
+      hands.dad.forEach((id, index) => groups[2 + (index % 2)].push(id));
+    } else if (live) {
+      carriages.forEach((id, index) => { if (index < 4) groups[index].push(id); });
+    }
     for (let i = 0; i < 4; i += 1) {
       const wrap = h('div', { style: 'position:relative' });
       wrap.append(h('img', { class: 'carriage', src: 'assets/carriage.webp', alt: '' }));
-      const pane = h('div', { class: 'car-window' });
-      if (carriages[i]) {
-        pane.append(h('img', { src: 'assets/cv_card_' + carriages[i] + '.webp', alt: showName(carriages[i]) }));
-      }
-      wrap.append(pane);
+      wrap.append(h('span', { class: 'stand-aim' }));
+      groups[i].forEach((id, index) => {
+        const img = h('img', { class: 'stood', src: 'assets/cv_card_' + id + '.webp', alt: showName(id) });
+        img.style.left = (16 + index * 20) + '%';
+        wrap.append(img);
+      });
       cars.append(wrap);
     }
     box.append(cars);
@@ -241,7 +384,7 @@
       const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
       const anim = card.animate([
         { transform: 'translate(0px, 0px) scale(1)' },
-        { transform: 'translate(' + Math.round(dx) + 'px, ' + Math.round(dy) + 'px) scale(0.22)' }
+        { transform: 'translate(' + Math.round(dx) + 'px, ' + Math.round(dy) + 'px) scale(0.48)' }
       ], { duration: 700, easing: 'ease-in', fill: 'forwards' });
       anim.onfinish = once;
       setTimeout(once, 1000);
@@ -287,11 +430,32 @@
       return;
     }
     if (roundNo === 3 && doneStrats[strategy]) return;
-    record(support);
     if (roundNo === 1) {
-      used[current.onset] = true;
-      slots -= 1;
+      if (findStep !== 'mark') return;
+      record(support);
+      const found = table.find((item) => item.uid === openUid);
+      if (found) {
+        found.gone = true;
+        hands[turn].push(found.item.id);
+      }
+      const pictured = current.id;
+      const who = turn;
+      const index = (who === 'daniel' ? 0 : 2) + ((hands[who].length - 1) % 2);
+      yayWord = current;
+      fly = { id: pictured, index: index };
+      screen = 'yay';
+      phase = 'yay';
+      render();
+      armFly(() => {
+        fly = null;
+        turn = who === 'daniel' ? 'dad' : 'daniel';
+        screen = 'r1';
+        phase = 'pick';
+        nextHunt(false);
+      });
+      return;
     }
+    record(support);
     if (roundNo === 3) doneStrats[strategy] = true;
     const pictured = current.id;
     yayWord = current;
@@ -306,9 +470,11 @@
   }
 
   function finishThisRound() {
+    clearTimeout(findTimer);
     screen = 'award';
     phase = 'pick';
     yayWord = null;
+    say([{ text: 'A ticket for you!', who: 'pig' }]);
     render();
   }
 
@@ -338,10 +504,8 @@
     doneStrats = { key: false, show: false, way: false };
     fly = null;
     if (number === 1) {
-      slots = 4;
-      used = {};
-      current = null;
-      screen = 'r1';
+      beginFind();
+      return;
     } else if (number === 2) {
       queue = shuffle(set.words);
       current = queue[0];
@@ -351,6 +515,8 @@
       current = round3Item();
       screen = 'r3';
     }
+    if (number === 2) say([{ text: 'Round 2. Which sound comes first?', who: 'pup' }]);
+    if (number === 3) say([{ text: 'Round 3. Pick a way, then say it.', who: 'pup' }]);
     render();
   }
 
@@ -450,23 +616,60 @@
   }
 
   function renderRound1() {
-    const stage = h('div', { class: 'playfield' + (phase === 'help' ? ' wide' : '') });
-    const main = h('div', { class: 'play-main' });
-    const row = h('div', { class: 'cards' });
-    const showing = (phase === 'say' || phase === 'help') && current;
-    if (showing) {
-      const shown = h('div', { class: 'back face' });
-      shown.append(h('img', { src: 'assets/cv_card_' + current.id + '.webp', alt: showName(current.id) }));
-      row.append(shown);
+    const stage = h('div', { class: 'find-board' });
+    if (findStep === 'over') {
+      const box = h('div', { class: 'over' });
+      const daniel = hands.daniel.length;
+      const dad = hands.dad.length;
+      let title = 'A draw!';
+      if (daniel > dad) title = 'Daniel wins!';
+      if (dad > daniel) title = 'Dad wins!';
+      box.append(h('h2', { text: title }));
+      box.append(h('p', { text: 'You both did so well.' }));
+      box.append(h('p', { text: 'Daniel ' + daniel + '    Dad ' + dad }));
+      box.append(h('button', { type: 'button', class: 'play-btn slim', text: 'Tickets', on: finishThisRound }));
+      stage.append(box);
+      return stage;
     }
-    const backs = showing ? Math.max(0, slots - 1) : slots;
-    for (let i = 0; i < backs; i += 1) row.append(backCard(() => { phase = 'onset'; render(); }));
-    main.append(row);
-    if (phase !== 'help') main.append(onsetRow());
-    stage.append(main);
-    const side = h('div', { class: 'play-side' });
-    side.append(phase === 'help' ? hintPanel() : sayBubble());
-    stage.append(side);
+    const turns = h('div', { class: 'turns' });
+    [['daniel', 'Daniel\'s go', 'assets/pig.webp'], ['dad', 'Dad\'s go', 'assets/pup.webp']].forEach((item) => {
+      const pill = h('div', { class: 'turn' + (turn === item[0] ? ' on' : '') });
+      pill.append(h('img', { src: item[2], alt: '' }));
+      pill.append(h('span', { text: item[1] }));
+      turns.append(pill);
+    });
+    stage.append(turns);
+    if (hunt && findStep !== 'deal') stage.append(h('div', { class: 'ask', text: 'Find ' + showName(hunt.id) + '!' }));
+    if (findStep === 'deal') stage.append(h('div', { class: 'note', text: 'Watch where each card lands.' }));
+    const row = h('div', { class: 'find-row' });
+    table.forEach((card, index) => {
+      if (card.gone) {
+        row.append(h('div', { class: 'find-card', 'aria-hidden': 'true' }));
+        return;
+      }
+      const button = h('button', {
+        type: 'button',
+        class: 'find-card' + (card.down ? ' down' : '') + (dealing && !reduce ? ' deal' : ''),
+        style: findStep === 'deal' ? 'animation-delay:' + (index * 90) + 'ms' : '',
+        'aria-label': card.down ? 'Card ' + card.n : showName(card.item.id),
+        on: () => onFindTap(card.uid)
+      });
+      const inner = h('span', { class: 'inner' });
+      const face = h('span', { class: 'face' });
+      face.append(h('img', { src: 'assets/cv_card_' + card.item.id + '.webp', alt: '' }));
+      face.append(h('span', { class: 'num', text: String(card.n) }));
+      const back = h('span', { class: 'backface' });
+      back.append(h('img', { src: 'assets/engine.webp', alt: '' }));
+      back.append(h('span', { class: 'num', text: String(card.n) }));
+      inner.append(face);
+      inner.append(back);
+      button.append(inner);
+      row.append(button);
+    });
+    stage.append(row);
+    if (findStep === 'miss') stage.append(h('p', { class: 'count-pill', text: 'Say the word, then tap the card.' }));
+    if (findStep === 'mark') stage.append(h('p', { class: 'note', text: 'Dad, mark how that go went.' }));
+    if (phase === 'help' && current) stage.append(hintPanel());
     return stage;
   }
 
@@ -585,6 +788,65 @@
     });
     panel.append(rounds);
     panel.append(h('p', { class: 'note', text: 'Any mix is fine. Round 3 uses the word box above. Change that word whenever you like.' }));
+    panel.append(h('h3', { text: 'Round 1 families' }));
+    const families = h('div', { class: 'rounds' });
+    words.sets.forEach((item) => {
+      families.append(h('button', {
+        type: 'button',
+        class: 'round-pick' + (store.findOn[item.id] ? ' on' : ''),
+        text: item.words.map((word) => showName(word.id)).join(' '),
+        'aria-pressed': store.findOn[item.id] ? 'true' : 'false',
+        on: () => {
+          const next = !store.findOn[item.id];
+          const onCount = words.sets.filter((group) => store.findOn[group.id]).length;
+          if (!next && onCount === 1) return;
+          store.findOn[item.id] = next;
+          const now = words.sets.filter((group) => store.findOn[group.id]).length;
+          if (now < 2) store.findCount = 1;
+          save();
+          render();
+        }
+      }));
+    });
+    panel.append(families);
+    const counts = h('div', { class: 'rounds' });
+    [1, 2].forEach((count) => {
+      counts.append(h('button', {
+        type: 'button',
+        class: 'round-pick' + (store.findCount === count ? ' on' : ''),
+        text: count + ' set' + (count > 1 ? 's' : '') + ' (' + (count * 4) + ' cards)',
+        on: () => {
+          if (count === 2) {
+            const on = words.sets.filter((group) => store.findOn[group.id]);
+            if (on.length < 2) {
+              const extra = words.sets.find((group) => !store.findOn[group.id]);
+              if (extra) store.findOn[extra.id] = true;
+            }
+          }
+          store.findCount = count;
+          save();
+          render();
+        }
+      }));
+    });
+    panel.append(counts);
+    const voiceRow = h('div', { class: 'shop' });
+    voiceRow.append(h('strong', { text: 'Pup and pig talk' }));
+    const mute = h('button', {
+      type: 'button',
+      class: 'switch' + (store.muted ? '' : ' on'),
+      'aria-pressed': store.muted ? 'false' : 'true',
+      'aria-label': 'Talking on or off',
+      on: () => {
+        store.muted = !store.muted;
+        if (store.muted && window.speechSynthesis) window.speechSynthesis.cancel();
+        save();
+        render();
+      }
+    });
+    mute.append(h('i', {}));
+    voiceRow.append(mute);
+    panel.append(voiceRow);
     const links = h('div', { class: 'nav-row' });
     links.append(h('button', { type: 'button', class: 'nav-btn', text: 'How to play', on: () => openSheet('how') }));
     links.append(h('button', { type: 'button', class: 'nav-btn', text: 'Progress', on: () => openSheet('progress') }));
@@ -759,6 +1021,7 @@
     panel.append(h('h2', { text: 'How to play' }));
     [
       'Choose the rounds in Grown-ups. Round 1, Round 2 and Round 3 can be on together, or just the ones you want today.',
+      'Round 1 is find the card. The pictures are dealt face up and numbered, then they flip face down. The pup asks for one word, such as Find spell. Tap a card. That card flips. If it is the one, he keeps it and you mark on his own, with help, or sound split off. If it is not, he says the word he turned over, the card flips back, and it is the other go. You take turns. The one with the most cards wins, and you both did well. One family is 4 cards. Two families is 8 cards.',
       'Sit beside him. When he says it by himself, tap Got it on his own. If you had to model it, tap Got it with help. Tick needed the sound split off when you broke the first sound away from the rest.',
       'Tips shows a model, or another way to say the word. He still keeps that turn.',
       'Round 3 has three cards: Say the key word, Show or point, and Say it another way. Type the word in the box and change it whenever you like. Show or point is a gesture. When he does it, tap Got it. The round is done when each card has a tick.',
@@ -814,7 +1077,7 @@
     const titles = {
       home: 'All Aboard!',
       grown: 'All Aboard!',
-      r1: 'Round 1: Pick a sound',
+      r1: 'Round 1: Find the card',
       r2: 'Round 2: Which sound?',
       r3: 'Round 3: Fix-It practice',
       yay: 'Round ' + roundNo,
@@ -828,6 +1091,7 @@
     document.body.dataset.screen = screen;
     document.body.dataset.phase = phase;
     document.querySelector('.world').classList.toggle('sheet', sheets.includes(screen));
+    document.querySelector('.train').style.zIndex = (screen === 'r1' || screen === 'r2' || screen === 'r3' || screen === 'yay') ? '7' : '5';
     ticketPill();
     setDad(screen === 'r1' || screen === 'r2' || screen === 'r3' || screen === 'yay');
     $('pig').style.visibility = ['home', 'yay', 'tickets', 'rate', 'award'].includes(screen) ? 'visible' : 'hidden';
@@ -845,7 +1109,8 @@
     else if (screen === 'progress') stage.append(renderProgress());
     else if (screen === 'how') stage.append(renderHow());
     else if (screen === 'rate') stage.append(renderRate());
-    $('live').textContent = $('title').textContent;
+    showTalk();
+    $('live').textContent = talk.text || $('title').textContent;
   }
 
   $('grown').addEventListener('click', () => { screen = screen === 'grown' ? 'home' : 'grown'; render(); });
@@ -853,6 +1118,10 @@
   $('with').addEventListener('click', () => score('help'));
   $('split').addEventListener('change', () => { splitOff = $('split').checked; });
   $('tips').addEventListener('click', () => {
+    if (screen === 'r1' && findStep !== 'mark') {
+      $('live').textContent = 'Find the card first.';
+      return;
+    }
     if (screen === 'r3' && !strategy) {
       $('live').textContent = 'Pick a strategy card first.';
       return;
@@ -873,6 +1142,56 @@
   ensureDeal();
   render();
 
+  function seedFind(step) {
+    clearTimeout(findTimer);
+    carriages = [];
+    const deck = words.sets[0].words.slice();
+    table = deck.map((item, index) => ({
+      uid: item.id + '-' + index,
+      item: item,
+      down: step !== 'deal',
+      gone: step === 'over',
+      n: index + 1
+    }));
+    hands = { daniel: ['bell'], dad: ['fell'] };
+    if (step === 'over') hands = { daniel: ['bell', 'smell', 'spell'], dad: ['fell'] };
+    if (step === 'play' || step === 'deal') {
+      const bell = table.find((card) => card.item.id === 'bell');
+      const fell = table.find((card) => card.item.id === 'fell');
+      if (bell) bell.gone = true;
+      if (fell) fell.gone = true;
+    }
+    hunt = byId('spell');
+    turn = 'daniel';
+    openUid = null;
+    dealing = false;
+    findStep = step === 'over' ? 'over' : step;
+    roundNo = 1;
+    screen = 'r1';
+    current = null;
+    if (step === 'miss') {
+      const fell = table.find((card) => card.item.id === 'fell');
+      if (fell) { fell.down = false; fell.gone = false; openUid = fell.uid; }
+      hands.dad = [];
+      findStep = 'miss';
+      talk = { text: 'Uh oh! What word is it?', who: 'pup', screen: 'r1' };
+    } else if (step === 'mark') {
+      const spell = table.find((card) => card.item.id === 'spell');
+      if (spell) { spell.down = false; openUid = spell.uid; }
+      current = byId('spell');
+      findStep = 'mark';
+      talk = { text: 'Yay! You got it!', who: 'pig', screen: 'r1' };
+    } else if (step === 'deal') {
+      talk = { text: 'Look at the cards!', who: 'pig', screen: 'r1' };
+      hands = { daniel: [], dad: [] };
+      table.forEach((card) => { card.gone = false; card.down = false; });
+    } else if (step === 'over') {
+      talk = { text: 'Daniel wins! You both did so well.', who: 'pig', screen: 'r1' };
+    } else {
+      talk = { text: 'Find spell!', who: 'pup', screen: 'r1' };
+    }
+  }
+
   window.Aboard = {
     preview(name) {
       set = words.sets[0];
@@ -892,6 +1211,9 @@
       phase = 'pick';
       store.practiceWord = 'spell';
       store.roundsOn = { 1: true, 2: true, 3: true };
+      store.findOn = { ell: true, ill: true, in: false };
+      store.findCount = 1;
+      store.muted = false;
       store.collection = { animals: ['cat', 'dog', 'hen', 'duck', 'frog', 'lion', 'owl'], trains: ['steam', 'tram', 'express', 'metro'] };
       store.sessions = [
         {
@@ -925,13 +1247,13 @@
       ];
       if (name === 'home') { screen = 'home'; carriages = []; sessionTickets = store.tickets; }
       if (name === 'grown') screen = 'grown';
-      if (name === 'round1') { screen = 'r1'; phase = 'pick'; current = null; carriages = []; slots = 4; used = {}; }
+      if (name === 'round1' || name === 'deal' || name === 'miss' || name === 'win') seedFind(name === 'round1' ? 'play' : name === 'win' ? 'over' : name);
       if (name === 'card') { screen = 'r1'; phase = 'say'; roundNo = 1; current = byId('bell'); slots = 4; carriages = []; }
-      if (name === 'hint') { screen = 'r1'; phase = 'help'; roundNo = 1; slots = 4; current = byId('spell'); }
+      if (name === 'hint') { seedFind('mark'); phase = 'help'; }
       if (name === 'yay') { screen = 'yay'; yayWord = null; roundNo = 1; carriages = ['bell', 'fell', 'spell']; }
       if (name === 'round2') { set = words.sets[1]; screen = 'r2'; phase = 'pick'; roundNo = 2; current = byId('bill'); tiles = words.tilePool.slice(); carriages = []; }
       if (name === 'round3') { set = words.sets[0]; screen = 'r3'; phase = 'say'; roundNo = 3; current = byId('spell'); strategy = 'show'; doneStrats = { key: true, show: false, way: false }; carriages = ['spell']; }
-      if (name === 'award') { screen = 'award'; roundNo = 1; }
+      if (name === 'award') { screen = 'award'; roundNo = 1; hands = { daniel: [], dad: [] }; talk = { text: 'A ticket for you!', who: 'pig', screen: 'award' }; }
       if (name === 'album') { screen = 'album'; returnTo = 'home'; }
       if (name === 'progress') { screen = 'progress'; returnTo = 'grown'; }
       if (name === 'how') { screen = 'how'; returnTo = 'grown'; }

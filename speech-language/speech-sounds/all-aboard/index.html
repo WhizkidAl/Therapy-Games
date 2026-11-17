@@ -19,7 +19,7 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
 .booth{position:absolute;right:0;top:8vh;width:23%;z-index:3;pointer-events:none}
 .pup{position:absolute;right:2.6%;top:11vh;width:14.5%;z-index:6;pointer-events:none}
 .pig{position:absolute;left:0.2%;bottom:24vh;width:13.5%;z-index:4;pointer-events:none}
-.train{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none}
+.train{position:absolute;left:0;right:0;bottom:0;z-index:7;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none;overflow:visible}
 .cars{display:flex;align-items:flex-end;flex:1;min-width:0}
 .cars > div{flex:1 1 0;min-width:0;position:relative}
 .carriage{width:100%;height:auto;display:block}
@@ -104,8 +104,8 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 .pic-only{width:clamp(150px,28vh,240px);background:#fff;border:8px solid #fff;border-radius:18px;padding:0;text-align:center;flex:0 0 auto;position:relative;overflow:hidden;box-shadow:0 10px 18px #24315c2e}
 .pic-only img{width:100%;height:auto}
 .strats{display:flex;gap:8px;align-items:stretch}
-.strat{width:clamp(108px,16vh,160px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #d5d8df;padding:0;flex:0 0 auto;position:relative}
-.fit .float-card{width:112px}
+.strat{width:clamp(124px,17vh,168px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #d5d8df;padding:0;flex:0 0 auto;position:relative}
+.fit .float-card{width:108px}
 .strat.key{border-color:#3d8ee8}
 .strat.show{border-color:#e0b43a}
 .strat.way{border-color:#2f9e4f}
@@ -124,16 +124,41 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 .round-pick{flex:1;background:#fff;border:3px solid #d5d8df;border-radius:14px;min-height:48px;font-weight:700}
 .round-pick.on{border-color:#f6c445;background:#fff8df}
 .nav-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.album-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
-.slot{background:#fff;border-radius:10px;padding:3px;text-align:center;font-size:11px;font-weight:700;color:#5c6b8a}
-.slot img{width:100%;height:36px;object-fit:contain}
-.slot.wait img{filter:grayscale(1);opacity:.35}
+.album-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.slot{background:#fff;border-radius:16px;padding:6px;text-align:center;font-size:14px;font-weight:700;color:var(--ink);box-shadow:0 4px 0 #e4e7ee}
+.slot img{width:100%;height:auto;aspect-ratio:180/240;object-fit:contain;border-radius:12px;background:#fff}
+.slot.wait{color:#8b93a7}
+.slot.wait img{filter:grayscale(1);opacity:.45}
 .how p,.sess{text-align:left;font-size:16px;line-height:1.35}
 .sess{background:#fff;border-radius:12px;padding:8px 10px;margin-top:6px}
 .week{margin-top:10px}
 .play-btn.slim{font-size:22px;padding:8px 16px;min-width:0;box-shadow:0 4px 0 #1c6b34}
-.car-window{position:absolute;left:15%;width:70%;top:14%;height:34%;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.car-window img{width:90%;height:90%;object-fit:contain;background:#fff;border-radius:4px}
+.cars > div{overflow:visible}
+.stand-aim{position:absolute;left:50%;bottom:92%;width:4px;height:4px}
+.stood{position:absolute;bottom:48%;width:58%;height:auto;z-index:6;border-radius:8px;background:#fff;box-shadow:0 8px 12px #24315c40}
+.find-board{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px}
+.find-row{display:flex;gap:8px;justify-content:center;align-items:flex-end;width:100%}
+.find-card{flex:1 1 0;max-width:148px;min-width:0;aspect-ratio:432/640;border:0;padding:0;background:transparent;position:relative;perspective:600px}
+.find-card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s}
+.find-card.down .inner{transform:rotateY(180deg)}
+.find-card .face,.find-card .backface{position:absolute;inset:0;border-radius:12px;overflow:hidden;backface-visibility:hidden;box-shadow:0 8px 14px #24315c33}
+.find-card .face{background:#fff}
+.find-card .face img{width:100%;height:100%;object-fit:contain;background:#fff}
+.find-card .backface img{width:62%;height:auto;object-fit:contain;background:transparent}
+.find-card .backface{background:#e23b3b;transform:rotateY(180deg);display:flex;align-items:center;justify-content:center}
+.find-card .num{position:absolute;left:4px;top:4px;background:#2a3f73;color:#fff;border-radius:999px;min-width:22px;height:22px;line-height:22px;font-size:13px;font-weight:700}
+.find-card.deal{animation:deal-in .5s ease-out both}
+.turns{display:flex;gap:8px}
+.turn{display:flex;align-items:center;gap:6px;background:#fff;border:3px solid #d5d8df;border-radius:999px;padding:4px 10px 4px 4px;font-weight:700}
+.turn.on{border-color:#f6c445;background:#fff8df}
+.turn img{width:36px;height:36px;object-fit:contain}
+.talk{position:absolute;z-index:9;max-width:230px;background:#fff;border-radius:18px;padding:10px 14px;font-weight:700;box-shadow:0 4px 0 #d5d8df}
+.talk.pig{left:18%;bottom:34%}
+.talk.pup{right:26%;top:22%}
+.talk[hidden]{display:none}
+.over{background:#fffaf2;border:6px solid #e23b3b;border-radius:24px;padding:16px;text-align:center;max-width:520px}
+.ask{background:#e23b3b;color:#fff;border-radius:999px;padding:8px 18px;font-size:clamp(22px,3vw,34px);border:4px solid #fff;font-weight:700}
+@keyframes deal-in{from{transform:translateY(-36px);opacity:0}to{transform:none;opacity:1}}
 body[data-screen="award"] .world{padding-bottom:26vh}
 body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
 .tickets{text-align:center}
@@ -179,6 +204,7 @@ body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
     <label class="word-set" id="word-set" hidden>Word <input id="word-box" type="text" maxlength="40" aria-label="Word for Round 3"></label>
   </header>
   <div id="stage"></div>
+  <div id="talk" class="talk pup" hidden></div>
 </div>
 <p id="live" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden" role="status" aria-live="polite"></p>
 <script src="words.js"></script>
