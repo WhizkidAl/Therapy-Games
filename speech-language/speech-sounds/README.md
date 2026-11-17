@@ -48,7 +48,7 @@ The site is public *code*, not public clinical records. Data go via authenticate
 
 ## All Aboard!
 
-`all-aboard/` is a separate generic card game, not this clinician workspace. It takes contrast sets from a config object and emits a results message for a host app. It does not sign in, store responses, or call Supabase. Status: **built**. The contract is in [CATALOGUE.md](../../CATALOGUE.md).
+`all-aboard/` is the station game for one contrast train. A parent records how each try went. Tickets stay in the browser. It does not sign in and it does not call Supabase. Status: **built**.
 
 ## Next engineering work
 

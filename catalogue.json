@@ -9,15 +9,15 @@
       "url": "https://whizkidal.github.io/Therapy-Games/speech-language/speech-sounds/all-aboard/index.html",
       "therapyArea": "speech-sounds",
       "kind": "game",
-      "presentationTags": ["multiple-oppositions", "minimal-pairs"],
-      "levelsSupported": ["1", "2", "3a", "3b", "4", "5"],
+      "presentationTags": ["multiple-oppositions"],
+      "levelsSupported": ["word", "phrase", "sentence"],
       "configurable": true,
       "supports_repair": true,
       "status": "built",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "lastUpdated": "2026-11-17",
-      "summary": "Train-themed contrast card game. An adult taps the word they heard. One mix-up per round opens a repair choice. Generic demo sets ship with the page; a host can pass a private config.",
-      "statusNote": "Built and covered by local rule tests. Not clinically reviewed or released."
+      "summary": "Station game for one contrast train. The child picks a sound, then a first sound, then a Fix-It way. A parent records independent or with help. Tickets stay on the tablet.",
+      "statusNote": "Version 2 matches the approved station screens. Built, not clinically reviewed or released."
     },
     {
       "id": "multiple-oppositions",
