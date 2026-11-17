@@ -14,67 +14,61 @@ html,body{margin:0;height:100%}
 body{font-family:Fredoka,system-ui,sans-serif;color:var(--ink);overflow:hidden;background:#8fd4f5}
 button{font:inherit;cursor:pointer;touch-action:manipulation;border:0}
 button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3px}
-.world{position:relative;height:100dvh;overflow:hidden}
-.sky{position:absolute;inset:0 0 28% 0;background:linear-gradient(#7ec8f0,#d7f3ff 55%,#fff)}
-.cloud{position:absolute;background:#fff;border-radius:40px;height:28px}
-.cloud:before,.cloud:after{content:"";position:absolute;background:#fff;border-radius:50%}
-.cloud:before{width:34px;height:34px;top:-16px;left:12px}
-.cloud:after{width:22px;height:22px;top:-10px;left:38px}
-.c1{width:90px;top:18%;left:8%}
-.c2{width:70px;top:28%;left:30%}
-.c3{width:80px;top:16%;left:52%}
-.arch{position:absolute;left:0;right:18%;top:0;height:46%;pointer-events:none}
-.flags{position:absolute;top:10%;left:8%;right:24%;height:28px;background:repeating-linear-gradient(90deg,#e23b3b 0 18px,#f6c445 18px 36px,#2f9e4f 36px 54px);clip-path:polygon(0 0,100% 0,96% 100%,4% 100%);opacity:.95}
-.clock{position:absolute;top:12%;left:38%;width:72px;height:72px;border-radius:50%;background:#f4efe4;border:6px solid #8a6a3b;box-shadow:inset 0 0 0 3px #fff}
-.clock i{position:absolute;left:50%;top:50%;width:4px;height:22px;background:#24315c;transform-origin:bottom center;border-radius:4px}
-.clock i.m{height:16px;transform:translate(-50%,-100%) rotate(40deg)}
-.clock i.h{height:12px;transform:translate(-50%,-100%) rotate(110deg)}
-.house{position:absolute;right:0;top:8%;width:30%;height:62%;background:repeating-linear-gradient(#c4554a 0 10px,#b8443c 10px 12px);border-radius:8px 0 0 0;box-shadow:inset 0 0 0 4px #8d342c}
-.roof{position:absolute;right:0;top:4%;width:32%;height:10%;background:#8d342c;clip-path:polygon(8% 100%,40% 0,100% 0,100% 100%)}
-.door{position:absolute;left:18%;bottom:18%;width:42%;height:48%;background:#c9844a;border:6px solid #f4efe4;border-radius:80px 80px 8px 8px}
-.door:after{content:"";position:absolute;right:10px;top:46%;width:8px;height:8px;border-radius:50%;background:#f6c445}
-.booth{position:absolute;right:1%;top:16%;width:27%;z-index:2;pointer-events:none}
-.pup{position:absolute;right:6%;top:18%;width:16%;z-index:3;pointer-events:none}
-.pig{position:absolute;left:1%;bottom:24%;width:16%;z-index:4;pointer-events:none}
-.platform{position:absolute;left:0;right:0;bottom:16%;height:14%;background:linear-gradient(#d5d8df,#b7bdc8);border-top:6px solid #9aa3b2}
-.rails{position:absolute;left:0;right:0;bottom:0;height:16%;background:#6b7280}
-.rails:before{content:"";position:absolute;left:0;right:0;top:28%;height:8px;background:#4b5563;box-shadow:0 28px 0 #4b5563}
-.sleeper{position:absolute;left:0;right:0;top:18%;height:70%;background:repeating-linear-gradient(90deg,#8a5a32 0 18px,transparent 18px 46px)}
-.train{position:absolute;left:0;right:0;bottom:2%;height:36%;display:flex;align-items:flex-end;justify-content:flex-end;gap:2px;z-index:5;pointer-events:none;padding:0 1%}
-.cars{display:flex;align-items:flex-end;gap:2px;height:64%;flex:1;min-width:0;justify-content:flex-end}
-.cars > div{height:100%;flex:1 1 0;max-width:200px}
-.carriage{height:100%;width:100%;object-fit:contain;object-position:bottom}
-.engine{height:112%;width:auto;max-width:34%}
-.hud{position:absolute;z-index:8;inset:10px 12px auto 12px;display:flex;align-items:flex-start;gap:10px}
-.title{flex:1;min-width:0;background:#e23b3b;color:#fff;border-radius:999px;text-align:center;font-size:clamp(22px,3.2vw,44px);padding:8px 18px;border:4px solid #fff;box-shadow:0 4px 0 #8f1828}
-.ticket-pill{display:flex;align-items:center;gap:6px;background:#fff;border-radius:16px;padding:4px 10px;border:3px solid var(--ink);font-weight:700;font-size:22px}
-.ticket-pill img{height:36px}
-.grown-btn{background:#2a3f73;color:#fff;border-radius:999px;padding:10px 16px;font-weight:700;min-height:52px}
-.dad{margin-left:auto;display:flex;gap:6px;align-items:center;background:#2a3f73;color:#fff;border-radius:999px;padding:6px;flex-wrap:wrap;justify-content:flex-end}
+.world{position:relative;height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr);padding-bottom:16vh;background:#8fd4f5}
+.backdrop{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:0;pointer-events:none}
+.booth{position:absolute;right:0;top:8vh;width:23%;z-index:3;pointer-events:none}
+.pup{position:absolute;right:2.6%;top:11vh;width:14.5%;z-index:6;pointer-events:none}
+.pig{position:absolute;left:0.2%;bottom:24vh;width:13.5%;z-index:4;pointer-events:none}
+.train{position:absolute;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none}
+.cars{display:flex;align-items:flex-end;flex:1;min-width:0}
+.cars > div{flex:1 1 0;min-width:0;position:relative}
+.carriage{width:100%;height:auto;display:block}
+.engine{width:29%;height:auto;flex:0 0 auto;margin-right:8px}
+.hud{position:relative;z-index:8;padding:8px 10px 0;display:flex;flex-wrap:nowrap;align-items:center;gap:8px}
+.title{flex:1 1 auto;min-width:0;background:#e23b3b;color:#fff;border-radius:999px;text-align:center;font-size:clamp(18px,2.5vw,40px);padding:8px 16px;border:4px solid #fff;box-shadow:0 4px 0 #8f1828}
+.ticket-pill{flex:0 0 auto;display:flex;align-items:center;gap:6px;background:#fff;border-radius:16px;padding:4px 10px;border:3px solid var(--ink);font-weight:700;font-size:20px}
+.ticket-pill img{height:32px}
+.grown-btn{flex:0 0 auto;background:#2a3f73;color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;min-height:46px}
+.grown-btn[hidden]{display:none}
+.dad{flex:0 0 auto;display:flex;gap:6px;align-items:center;background:#2a3f73;color:#fff;border-radius:999px;padding:4px 6px 4px 10px}
 .dad[hidden]{display:none}
-.dad span{font-weight:700;padding:0 6px}
-.dad button{background:#fff;color:var(--ink);border-radius:999px;min-height:48px;padding:8px 12px;font-weight:700}
+.dad span{font-weight:700;padding:0 2px}
+.dad button{background:#fff;color:var(--ink);border-radius:999px;min-height:40px;padding:6px 10px;font-weight:700;font-size:15px}
 .dad button.go{background:#d9f5df}
-.dad label{display:flex;gap:6px;align-items:center;font-size:16px;padding-right:8px}
-#stage{position:absolute;z-index:6;left:2%;right:2%;top:78px;bottom:32%}
-.play-btn{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);background:#2f9e4f;color:#fff;font-size:clamp(36px,5vw,56px);border-radius:24px;padding:14px 48px;border:5px solid #fff;box-shadow:0 8px 0 #1c6b34;min-width:240px}
-.cards{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.back{width:min(18vw,150px);aspect-ratio:3/4;background:#e23b3b;border:6px solid #f6c445;border-radius:16px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(22px,3vw,32px);font-weight:700;box-shadow:0 6px 0 #8f1828}
-.back img{width:70%;height:auto}
+.dad label{display:flex;gap:6px;align-items:center;font-size:13px;line-height:1.15;max-width:118px}
+.dad input{width:20px;height:20px;flex:0 0 auto}
+#stage{position:relative;z-index:6;min-height:0;height:100%;margin:4px 26% 0 8px;display:flex;align-items:center;justify-content:center}
+.world.sheet{padding-bottom:12vh}
+.world.sheet #stage{margin:4px 2% 0 2%}
+body[data-screen="home"] #stage{margin-left:15%;margin-right:26%}
+body[data-screen="yay"] #stage{margin-left:16%;margin-right:24%}
+body[data-screen="tickets"] .world,body[data-screen="rate"] .world{padding-bottom:26vh}
+body[data-screen="tickets"] .world.sheet #stage,body[data-screen="rate"] .world.sheet #stage{margin:8px 18% 0 16%}
+body[data-phase="help"] .world #stage{margin-right:8px}
+body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
+.play-btn{background:#2f9e4f;color:#fff;font-size:clamp(34px,4.6vw,56px);border-radius:24px;padding:14px 48px;border:5px solid #fff;box-shadow:0 8px 0 #1c6b34;min-width:220px}
+.playfield{display:grid;grid-template-columns:minmax(0,1fr) minmax(148px,188px);gap:8px;width:100%;height:100%;align-items:center}
+.playfield.wide{grid-template-columns:minmax(0,1fr) minmax(260px,440px)}
+.play-main{min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.play-main.rowish{flex-direction:row;align-items:center}
+.play-side{min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;align-self:center;position:relative;z-index:7}
+.cards{display:flex;gap:10px;justify-content:center;flex-wrap:nowrap;width:100%;align-items:stretch}
+.back{flex:1 1 0;width:0;max-width:200px;min-width:0;aspect-ratio:3/4;background:#e23b3b;border:6px solid #f6c445;border-radius:16px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(20px,2.6vh,32px);font-weight:700;box-shadow:0 6px 0 #8f1828}
+.back img{width:68%;height:auto}
 .back.on{outline:5px solid #0b57d0}
-.onsets{display:flex;gap:12px;justify-content:center;margin-top:14px}
-.onset{width:74px;height:74px;border-radius:50%;color:#fff;font-size:28px;font-weight:700;border:4px solid #fff;position:relative}
+.onsets{display:flex;gap:12px;justify-content:center}
+.onset{width:clamp(58px,9vh,76px);height:clamp(58px,9vh,76px);border-radius:50%;color:#fff;font-size:clamp(22px,3vh,30px);font-weight:700;border:4px solid #fff;position:relative}
 .onset.used{filter:grayscale(.4)}
 .onset.used:after{content:"✓";position:absolute;right:-4px;top:-6px;background:#fff;color:#1c6b34;border-radius:50%;width:22px;height:22px;font-size:14px;line-height:22px}
-.bubble{background:#fff;border-radius:18px;padding:10px 14px;font-weight:700;box-shadow:0 4px 0 #d5d8df;max-width:280px}
-.say{position:absolute;right:2%;top:8px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.bubble{background:#fff;border-radius:18px;padding:10px 14px;font-weight:700;box-shadow:0 4px 0 #d5d8df;max-width:176px}
+.say{display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:100%}
 .mouth{background:#fff;border:3px solid #e23b3b;color:#e23b3b;border-radius:999px;padding:6px 12px;font-weight:700}
-.panel{background:#fffaf2;border:6px solid #e23b3b;border-radius:28px;padding:16px;height:100%;overflow:auto}
+.panel{background:#fffaf2;border:6px solid #e23b3b;border-radius:28px;padding:14px 16px;height:auto;max-height:100%;overflow:auto;width:100%}
 .panel h2{margin:0 0 8px;color:#e23b3b;font-size:clamp(26px,3vw,36px)}
 .levels,.trains{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.level,.train-pick{background:#fff;border:3px solid #d5d8df;border-radius:16px;padding:8px;text-align:center;min-height:72px}
+.level,.train-pick{background:#fff;border:3px solid #d5d8df;border-radius:16px;padding:8px;text-align:center}
 .level.on{border-color:#f6c445;background:#fff8df}
-.level img{height:64px}
+.level img{height:52px}
 .level b{display:block;font-size:22px}
 .frame{display:block;margin-top:6px;background:#2a3f73;color:#fff;border-radius:999px;padding:6px 8px}
 .level:not(.on) .frame{background:#fff;color:var(--ink);border:2px solid #d5d8df}
@@ -85,14 +79,14 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
 .switch.on{background:#2f9e4f}
 .switch i{position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;transition:left .2s}
 .switch.on i{left:33px}
-.hint{background:#2a3f73;color:#fff;border-radius:20px;padding:14px;max-width:420px;position:absolute;left:8px;top:150px;z-index:7}
+.hint{background:#2a3f73;color:#fff;border-radius:20px;padding:12px;width:100%;max-height:100%}
 .hint h3{margin:0 0 8px}
 .model{background:#fff8df;color:var(--ink);border-radius:12px;padding:8px;font-size:28px;text-align:center}
 .split{display:flex;gap:8px;align-items:center;justify-content:center}
 .chip{background:#f0a202;color:#fff;border-radius:12px;padding:8px 14px;font-size:24px;font-weight:700}
 .chip.dark{background:#2a3f73}
-.yay{position:absolute;left:50%;top:8%;transform:translateX(-50%);background:#2f9e4f;color:#fff;font-size:clamp(28px,4vw,42px);border-radius:999px;padding:10px 22px;border:4px solid #fff}
-.float-card{position:absolute;right:22%;top:6%;width:min(22vw,180px);background:#fff;border:4px solid #e23b3b;border-radius:16px;text-align:center;font-weight:700;padding:6px}
+.yay{background:#2f9e4f;color:#fff;font-size:clamp(26px,4vw,42px);border-radius:999px;padding:10px 22px;border:4px solid #fff;text-align:center}
+.float-card{width:clamp(120px,20vh,200px);margin:0;background:#fff;border:4px solid #e23b3b;border-radius:16px;text-align:center;font-weight:700;padding:6px;flex:0 0 auto}
 .float-card img{width:100%;height:auto}
 .help-btn{background:#fff;border-radius:999px;min-height:48px;padding:8px 14px;font-weight:700;border:3px solid var(--ink)}
 .q{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
@@ -101,13 +95,13 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
 .q b:nth-child(4n+1){background:#3d6fd6}
 .q b:nth-child(4n){background:#2f9e4f}
 .q span{background:#fff;color:var(--ink);border-radius:10px;padding:8px}
-.tiles{display:grid;grid-template-columns:repeat(4,74px);gap:8px;justify-content:center}
-.tile{height:68px;border-radius:14px;background:#fff8df;border:4px solid #2a3f73;font-size:26px;font-weight:700}
+.tiles{display:grid;grid-template-columns:repeat(4,clamp(52px,8vh,74px));gap:8px;justify-content:center}
+.tile{height:clamp(48px,7.4vh,68px);border-radius:14px;background:#fff8df;border:4px solid #2a3f73;font-size:clamp(20px,3vh,26px);font-weight:700;color:var(--ink)}
 .tile.bad{animation:wiggle .25s}
-.pic-only{width:min(24vw,200px);background:#fff;border:5px solid #e23b3b;border-radius:16px;padding:8px;text-align:center}
+.pic-only{width:clamp(120px,24vh,210px);background:#fff;border:5px solid #e23b3b;border-radius:16px;padding:8px;text-align:center;flex:0 0 auto}
 .pic-only img{width:100%;height:auto}
 .strats{display:flex;gap:10px}
-.strat{width:min(22vw,190px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #3d6fd6;padding:0}
+.strat{width:clamp(120px,22vh,190px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #3d6fd6;padding:0;flex:0 0 auto}
 .strat.tell{border-color:#2f9e4f}
 .strat img{width:100%;height:auto;display:block}
 .tickets{text-align:center}
@@ -115,17 +109,16 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
 .mystery button{background:transparent}
 .mystery img{width:min(22vw,180px)}
 .faces{display:flex;gap:18px;justify-content:center}
-.face{width:120px;height:120px;border-radius:50%;border:6px solid #fff;font-size:64px;box-shadow:0 6px 0 #d5d8df}
+.face{width:clamp(88px,16vh,120px);height:clamp(88px,16vh,120px);border-radius:50%;border:6px solid #fff;font-size:clamp(44px,8vh,64px);box-shadow:0 6px 0 #d5d8df}
 .face.yes{background:#2f9e4f}
 .face.ok{background:#f6c445}
 .face.no{background:#3d6fd6}
 .caption{font-weight:700;font-size:22px}
 .reveal{background:#fff8df;border-radius:16px;padding:12px;font-size:24px;font-weight:700}
 @media (max-height:780px){
-  .train{height:30%}
-  #stage{bottom:28%}
-  .back{width:min(16vw,130px)}
-  .onset{width:64px;height:64px}
+  .back{max-width:150px}
+  .dad button{font-size:14px;padding:6px 8px}
+  .level img{height:44px}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
@@ -135,23 +128,10 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
 </head>
 <body>
 <div class="world">
-  <div class="sky" aria-hidden="true">
-    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
-    <svg class="arch" viewBox="0 0 1200 420" preserveAspectRatio="none">
-      <path d="M20 400 Q600 -40 1180 400" fill="none" stroke="#8aa4b8" stroke-width="18"/>
-      <path d="M80 400 Q600 20 1120 400" fill="none" stroke="#c5d5e2" stroke-width="8"/>
-      <path d="M200 400 L280 80 M400 400 L460 40 M600 400 L600 10 M800 400 L740 40 M1000 400 L920 80" stroke="#9bb0c2" stroke-width="6"/>
-    </svg>
-    <div class="flags"></div>
-    <div class="clock" aria-hidden="true"><i class="h"></i><i class="m"></i></div>
-  </div>
-  <div class="roof" aria-hidden="true"></div>
-  <div class="house" aria-hidden="true"><div class="door"></div></div>
+  <img class="backdrop" src="assets/bg-station.webp" alt="">
   <img class="booth" src="assets/booth.webp" alt="">
   <img class="pup" src="assets/pup.webp" alt="">
   <img class="pig" id="pig" src="assets/pig.webp" alt="">
-  <div class="platform" aria-hidden="true"></div>
-  <div class="rails" aria-hidden="true"><div class="sleeper"></div></div>
   <div class="train" id="train" aria-hidden="true"></div>
   <header class="hud">
     <button type="button" class="grown-btn" id="grown">Grown-ups</button>
@@ -162,6 +142,7 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
       <button type="button" id="own">Got it on his own</button>
       <button type="button" id="with">Got it with help</button>
       <label><input type="checkbox" id="split"> needed the sound split off</label>
+      <button type="button" id="help">Help</button>
     </div>
   </header>
   <div id="stage"></div>

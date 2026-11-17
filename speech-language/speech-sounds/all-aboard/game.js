@@ -102,6 +102,7 @@
 
   function setDad(on) {
     $('dad').hidden = !on;
+    $('grown').hidden = on;
     $('split').checked = splitOff;
   }
 
@@ -230,9 +231,6 @@
     const box = h('div', { class: 'say' });
     box.append(h('div', { class: 'bubble', text: cueText() }));
     box.append(h('div', { class: 'mouth', text: 'then say it!' }));
-    if (phase === 'say') {
-      box.append(h('button', { type: 'button', class: 'help-btn', text: 'Help', on: () => { usedHelp = true; phase = 'help'; render(); } }));
-    }
     return box;
   }
 
@@ -267,28 +265,35 @@
   }
 
   function renderRound1() {
-    const stage = h('div', {});
+    const stage = h('div', { class: 'playfield' + (phase === 'help' ? ' wide' : '') });
+    const main = h('div', { class: 'play-main' });
     const row = h('div', { class: 'cards' });
-    for (let i = 0; i < slots; i += 1) {
+    const showing = (phase === 'say' || phase === 'help') && current;
+    if (showing) {
+      const shown = h('div', { class: 'back', style: 'background:#fff' });
+      shown.append(h('img', { src: 'assets/cv_card_' + current.id + '.webp', alt: showName(current.id) }));
+      row.append(shown);
+    }
+    const backs = showing ? Math.max(0, slots - 1) : slots;
+    for (let i = 0; i < backs; i += 1) {
       row.append(backCard(() => { phase = 'onset'; render(); }));
     }
-    if (phase === 'say' || phase === 'help') {
-      const shown = h('div', { class: 'float-card' });
-      shown.append(h('img', { src: 'assets/cv_card_' + current.id + '.webp', alt: showName(current.id) }));
-      stage.append(shown);
-    }
-    stage.append(row);
-    if (phase !== 'help') stage.append(onsetRow());
-    stage.append(phase === 'help' ? hintPanel() : sayBubble());
+    main.append(row);
+    if (phase !== 'help') main.append(onsetRow());
+    stage.append(main);
+    const side = h('div', { class: 'play-side' });
+    side.append(phase === 'help' ? hintPanel() : sayBubble());
+    stage.append(side);
     return stage;
   }
 
   function renderRound2() {
-    const stage = h('div', { style: 'display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap' });
+    const stage = h('div', { class: 'playfield' + (phase === 'help' ? ' wide' : '') });
+    const main = h('div', { class: 'play-main rowish' });
     const pic = h('div', { class: 'pic-only' });
     pic.append(h('img', { src: 'assets/cv_pic_' + current.id + '.webp', alt: '' }));
     pic.append(h('div', { class: 'caption', text: '?' }));
-    stage.append(pic);
+    main.append(pic);
     const grid = h('div', { class: 'tiles' });
     tiles.forEach((tile) => {
       grid.append(h('button', {
@@ -299,10 +304,11 @@
         on: () => pickTile(tile, grid)
       }));
     });
-    stage.append(grid);
-    if (phase === 'say') stage.append(h('div', { class: 'bubble', text: line(current) }));
-    if (phase === 'help') stage.append(hintPanel());
-    else stage.append(sayBubble());
+    main.append(grid);
+    stage.append(main);
+    const side = h('div', { class: 'play-side' });
+    side.append(phase === 'help' ? hintPanel() : sayBubble());
+    stage.append(side);
     return stage;
   }
 
@@ -323,10 +329,11 @@
   }
 
   function renderRound3() {
-    const stage = h('div', { style: 'display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap' });
-    const card = h('div', { class: 'float-card', style: 'position:static' });
+    const stage = h('div', { class: 'playfield' + (phase === 'help' ? ' wide' : '') });
+    const main = h('div', { class: 'play-main rowish' });
+    const card = h('div', { class: 'float-card' });
     card.append(h('img', { src: 'assets/cv_card_' + current.id + '.webp', alt: showName(current.id) }));
-    stage.append(card);
+    main.append(card);
     const strats = h('div', { class: 'strats' });
     [['show', 'Show it', 'assets/cv_strat_show.webp'], ['another-way', 'Say it another way', 'assets/cv_strat_tell.webp']].forEach((item) => {
       const button = h('button', {
@@ -338,14 +345,11 @@
       button.append(h('img', { src: item[2], alt: '' }));
       strats.append(button);
     });
-    stage.append(strats);
-    if (phase === 'help') stage.append(cluePanel());
-    else {
-      const side = h('div', { class: 'say' });
-      side.append(h('div', { class: 'bubble', text: phase === 'say' ? line(current) : 'Pick a way, then say it.' }));
-      side.append(h('button', { type: 'button', class: 'help-btn', text: 'Help', on: () => { usedHelp = true; phase = 'help'; render(); } }));
-      stage.append(side);
-    }
+    main.append(strats);
+    stage.append(main);
+    const side = h('div', { class: 'play-side' });
+    side.append(phase === 'help' ? cluePanel() : sayBubble());
+    stage.append(side);
     return stage;
   }
 
@@ -448,8 +452,11 @@
     $('title').textContent = screen === 'home' || screen === 'grown' ? 'All Aboard!' : screen === 'r2' ? 'Round 2: Which sound?' : screen === 'r3' ? 'Round 3: Fix-It practice' : screen === 'yay' ? 'Round ' + roundNo : 'Round 1: Pick a sound';
     if (screen === 'tickets') $('title').textContent = 'Tickets';
     if (screen === 'rate') $('title').textContent = 'Did you like it?';
+    document.body.dataset.screen = screen;
+    document.body.dataset.phase = phase;
+    document.querySelector('.world').classList.toggle('sheet', screen === 'grown' || screen === 'tickets' || screen === 'rate');
     ticketPill();
-    setDad((screen === 'r1' || screen === 'r2' || screen === 'r3') && (phase === 'say' || phase === 'help') && !!current);
+    setDad(screen === 'r1' || screen === 'r2' || screen === 'r3' || screen === 'yay');
     $('pig').style.visibility = (screen === 'home' || screen === 'yay' || screen === 'tickets' || screen === 'rate') ? 'visible' : 'hidden';
     drawTrain();
     const stage = $('stage');
@@ -460,13 +467,15 @@
     else if (screen === 'r2') stage.append(renderRound2());
     else if (screen === 'r3') stage.append(renderRound3());
     else if (screen === 'yay') {
-      stage.append(h('div', { class: 'yay', text: 'Yay! You got it!' }));
+      const stack = h('div', { class: 'play-main' });
+      stack.append(h('div', { class: 'yay', text: 'Yay! You got it!' }));
       if (yayWord) {
         const card = h('div', { class: 'float-card' });
         card.append(h('img', { src: 'assets/cv_card_' + yayWord.id + '.webp', alt: showName(yayWord.id) }));
-        stage.append(card);
+        stack.append(card);
       }
-      stage.append(h('div', { class: 'bubble', style: 'position:absolute;left:18%;top:20%', text: '+1 ticket' }));
+      stack.append(h('div', { class: 'bubble', text: '+1 ticket' }));
+      stage.append(stack);
     } else if (screen === 'tickets') stage.append(renderTickets());
     else if (screen === 'rate') stage.append(renderRate());
     $('live').textContent = $('title').textContent;
@@ -476,6 +485,15 @@
   $('own').addEventListener('click', () => score('independent'));
   $('with').addEventListener('click', () => score('help'));
   $('split').addEventListener('change', () => { splitOff = $('split').checked; });
+  $('help').addEventListener('click', () => {
+    if (!current) {
+      $('live').textContent = 'Pick a card, then pick a sound.';
+      return;
+    }
+    usedHelp = true;
+    phase = 'help';
+    render();
+  });
   render();
 
   window.Aboard = {
@@ -486,7 +504,7 @@
       sessionTickets = name === 'tickets' ? 12 : name === 'home' || name === 'grown' || name === 'round1' ? 0 : 3;
       roundCounts = { 1: 4, 2: 4, 3: 4 };
       used = { b: true };
-      slots = 3;
+      slots = 4;
       current = byId('spell');
       queue = set.words;
       step = 0;
@@ -494,12 +512,12 @@
       strategy = 'another-way';
       if (name === 'home') { screen = 'home'; carriages = []; sessionTickets = store.tickets; }
       if (name === 'grown') screen = 'grown';
-      if (name === 'round1') { screen = 'r1'; phase = 'pick'; current = null; carriages = []; }
-      if (name === 'hint') { screen = 'r1'; phase = 'help'; roundNo = 1; }
+      if (name === 'round1') { screen = 'r1'; phase = 'pick'; current = null; carriages = []; slots = 4; used = {}; }
+      if (name === 'hint') { screen = 'r1'; phase = 'help'; roundNo = 1; slots = 4; }
       if (name === 'yay') { screen = 'yay'; yayWord = byId('spell'); roundNo = 1; }
       if (name === 'round2') { set = words.sets[1]; screen = 'r2'; phase = 'pick'; roundNo = 2; current = byId('bill'); tiles = words.tilePool.slice(); carriages = []; }
       if (name === 'round3') { set = words.sets[1]; screen = 'r3'; phase = 'help'; roundNo = 3; current = byId('spill'); carriages = ['fill', 'spin']; }
-      if (name === 'tickets') { screen = 'tickets'; pickedMystery = null; reveal = ''; }
+      if (name === 'tickets') { screen = 'tickets'; pickedMystery = null; reveal = ''; store.tickets = Math.max(store.tickets, 24); }
       if (name === 'rate') screen = 'rate';
       render();
     }
