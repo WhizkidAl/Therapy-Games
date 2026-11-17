@@ -24,8 +24,8 @@ button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3p
 .cars > div{flex:1 1 0;min-width:0;position:relative}
 .carriage{width:100%;height:auto;display:block}
 .engine{width:29%;height:auto;flex:0 0 auto;margin-right:8px}
-.hud{position:relative;z-index:8;padding:8px 10px 0;display:flex;flex-wrap:nowrap;align-items:center;gap:8px}
-.title{flex:1 1 auto;min-width:0;background:#e23b3b;color:#fff;border-radius:999px;text-align:center;font-size:clamp(18px,2.5vw,40px);padding:8px 16px;border:4px solid #fff;box-shadow:0 4px 0 #8f1828}
+.hud{position:relative;z-index:8;padding:8px 10px 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.title{flex:1 1 220px;min-width:220px;background:#e23b3b;color:#fff;border-radius:999px;text-align:center;font-size:clamp(18px,2.4vw,40px);padding:8px 16px;border:4px solid #fff;box-shadow:0 4px 0 #8f1828}
 .ticket-pill{flex:0 0 auto;display:flex;align-items:center;gap:6px;background:#fff;border-radius:16px;padding:4px 10px;border:3px solid var(--ink);font-weight:700;font-size:20px}
 .ticket-pill img{height:32px}
 .grown-btn{flex:0 0 auto;background:#2a3f73;color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;min-height:46px}
@@ -53,7 +53,9 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 .play-main.rowish{flex-direction:row;align-items:center}
 .play-side{min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;align-self:center;position:relative;z-index:7}
 .cards{display:flex;gap:10px;justify-content:center;flex-wrap:nowrap;width:100%;align-items:stretch}
-.back{flex:1 1 0;width:0;max-width:200px;min-width:0;aspect-ratio:3/4;background:#e23b3b;border:6px solid #f6c445;border-radius:16px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(20px,2.6vh,32px);font-weight:700;box-shadow:0 6px 0 #8f1828}
+.back{flex:1 1 0;width:0;max-width:210px;min-width:0;aspect-ratio:3/4;background:#e23b3b;border:6px solid #f6c445;border-radius:16px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(20px,2.6vh,32px);font-weight:700;box-shadow:0 6px 0 #8f1828;position:relative;overflow:hidden}
+.back.face{background:#fff;border:8px solid #fff;color:var(--ink);box-shadow:0 10px 18px #24315c2e}
+.back.face img{width:100%}
 .back img{width:68%;height:auto}
 .back.on{outline:5px solid #0b57d0}
 .onsets{display:flex;gap:12px;justify-content:center}
@@ -68,7 +70,7 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 .levels,.trains{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .level,.train-pick{background:#fff;border:3px solid #d5d8df;border-radius:16px;padding:8px;text-align:center}
 .level.on{border-color:#f6c445;background:#fff8df}
-.level img{height:52px}
+.level img{height:40px}
 .level b{display:block;font-size:22px}
 .frame{display:block;margin-top:6px;background:#2a3f73;color:#fff;border-radius:999px;padding:6px 8px}
 .level:not(.on) .frame{background:#fff;color:var(--ink);border:2px solid #d5d8df}
@@ -86,8 +88,9 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 .chip{background:#f0a202;color:#fff;border-radius:12px;padding:8px 14px;font-size:24px;font-weight:700}
 .chip.dark{background:#2a3f73}
 .yay{background:#2f9e4f;color:#fff;font-size:clamp(26px,4vw,42px);border-radius:999px;padding:10px 22px;border:4px solid #fff;text-align:center}
-.float-card{width:clamp(120px,20vh,200px);margin:0;background:#fff;border:4px solid #e23b3b;border-radius:16px;text-align:center;font-weight:700;padding:6px;flex:0 0 auto}
-.float-card img{width:100%;height:auto}
+.float-card{width:clamp(140px,26vh,240px);margin:0;background:#fff;border:8px solid #fff;border-radius:18px;text-align:center;font-weight:700;padding:0;flex:0 0 auto;position:relative;overflow:hidden;box-shadow:0 10px 18px #24315c2e}
+.float-card img{width:100%;height:auto;display:block}
+.float-card:after,.pic-only:after,.back.face:after{content:"";position:absolute;left:0;right:0;top:0;height:42%;background:linear-gradient(#ffffffc4,#ffffff00);pointer-events:none}
 .help-btn{background:#fff;border-radius:999px;min-height:48px;padding:8px 14px;font-weight:700;border:3px solid var(--ink)}
 .q{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .q b{background:#e23b3b;color:#fff;border-radius:10px;padding:8px}
@@ -98,12 +101,41 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 .tiles{display:grid;grid-template-columns:repeat(4,clamp(52px,8vh,74px));gap:8px;justify-content:center}
 .tile{height:clamp(48px,7.4vh,68px);border-radius:14px;background:#fff8df;border:4px solid #2a3f73;font-size:clamp(20px,3vh,26px);font-weight:700;color:var(--ink)}
 .tile.bad{animation:wiggle .25s}
-.pic-only{width:clamp(120px,24vh,210px);background:#fff;border:5px solid #e23b3b;border-radius:16px;padding:8px;text-align:center;flex:0 0 auto}
+.pic-only{width:clamp(150px,28vh,240px);background:#fff;border:8px solid #fff;border-radius:18px;padding:0;text-align:center;flex:0 0 auto;position:relative;overflow:hidden;box-shadow:0 10px 18px #24315c2e}
 .pic-only img{width:100%;height:auto}
-.strats{display:flex;gap:10px}
-.strat{width:clamp(120px,22vh,190px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #3d6fd6;padding:0;flex:0 0 auto}
-.strat.tell{border-color:#2f9e4f}
+.strats{display:flex;gap:8px;align-items:stretch}
+.strat{width:clamp(108px,16vh,160px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #d5d8df;padding:0;flex:0 0 auto;position:relative}
+.fit .float-card{width:112px}
+.strat.key{border-color:#3d8ee8}
+.strat.show{border-color:#e0b43a}
+.strat.way{border-color:#2f9e4f}
+.strat.on{outline:4px solid #0b57d0}
+.strat.done{box-shadow:0 0 0 3px #2f9e4f}
 .strat img{width:100%;height:auto;display:block}
+.strat .pip{position:absolute;left:16.5%;top:26%;width:20%;height:33%;object-fit:contain;border-radius:50%;background:#fff8e6}
+.strat .tick{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:50%;background:#2f9e4f;color:#fff;font-size:18px;line-height:28px;text-align:center}
+.got{background:#2f9e4f;color:#fff;border-radius:999px;min-height:52px;padding:8px 22px;font-weight:700;font-size:22px;border:4px solid #fff}
+.word-set{flex:1 1 100%;display:flex;justify-content:flex-end;align-items:center;gap:8px;background:#2a3f73;color:#fff;border-radius:999px;padding:4px 8px 4px 14px;font-weight:700}
+.word-set[hidden]{display:none}
+.word-set input{border:0;border-radius:999px;min-height:36px;padding:4px 12px;font:inherit;width:min(42vw,220px);color:var(--ink)}
+.count-pill{background:#fff;border-radius:999px;padding:8px 14px;font-weight:700;margin:0}
+.nav-btn{background:#2a3f73;color:#fff;border-radius:999px;min-height:44px;padding:8px 14px;font-weight:700}
+.rounds{display:flex;gap:8px}
+.round-pick{flex:1;background:#fff;border:3px solid #d5d8df;border-radius:14px;min-height:48px;font-weight:700}
+.round-pick.on{border-color:#f6c445;background:#fff8df}
+.nav-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.album-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.slot{background:#fff;border-radius:10px;padding:3px;text-align:center;font-size:11px;font-weight:700;color:#5c6b8a}
+.slot img{width:100%;height:36px;object-fit:contain}
+.slot.wait img{filter:grayscale(1);opacity:.35}
+.how p,.sess{text-align:left;font-size:16px;line-height:1.35}
+.sess{background:#fff;border-radius:12px;padding:8px 10px;margin-top:6px}
+.week{margin-top:10px}
+.play-btn.slim{font-size:22px;padding:8px 16px;min-width:0;box-shadow:0 4px 0 #1c6b34}
+.car-window{position:absolute;left:15%;width:70%;top:14%;height:34%;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.car-window img{width:90%;height:90%;object-fit:contain;background:#fff;border-radius:4px}
+body[data-screen="award"] .world{padding-bottom:26vh}
+body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
 .tickets{text-align:center}
 .mystery{display:flex;gap:16px;justify-content:center;margin-top:12px}
 .mystery button{background:transparent}
@@ -118,7 +150,7 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
 @media (max-height:780px){
   .back{max-width:150px}
   .dad button{font-size:14px;padding:6px 8px}
-  .level img{height:44px}
+  .level img{height:36px}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
@@ -142,13 +174,15 @@ body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
       <button type="button" id="own">Got it on his own</button>
       <button type="button" id="with">Got it with help</button>
       <label><input type="checkbox" id="split"> needed the sound split off</label>
-      <button type="button" id="help">Help</button>
+      <button type="button" id="tips">Tips</button>
     </div>
+    <label class="word-set" id="word-set" hidden>Word <input id="word-box" type="text" maxlength="40" aria-label="Word for Round 3"></label>
   </header>
   <div id="stage"></div>
 </div>
 <p id="live" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden" role="status" aria-live="polite"></p>
 <script src="words.js"></script>
+<script src="collect.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

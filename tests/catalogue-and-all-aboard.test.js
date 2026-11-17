@@ -63,6 +63,18 @@ test('each practice word has a word, phrase and sentence frame', () => {
   });
 });
 
+test('collectable tickets are two sets of 24 and avoid the probe list', () => {
+  const collect = require(path.join(gameDir, 'collect.js'));
+  assert.equal(collect.animals.length, 24);
+  assert.equal(collect.trains.length, 24);
+  const blob = collect.animals.concat(collect.trains).map((item) => item.id + ' ' + item.label).join('\n');
+  banned.forEach((word) => {
+    assert.equal(new RegExp('\\b' + word + '\\b', 'i').test(blob), false, word);
+  });
+  const ids = new Set(collect.animals.concat(collect.trains).map((item) => item.id));
+  assert.equal(ids.size, 48);
+});
+
 test('the game files do not use the probe-word list', () => {
   const names = fs.readdirSync(gameDir).filter((name) => /\.(html|js|json|css|sql|md)$/.test(name));
   const blob = names.map((name) => fs.readFileSync(path.join(gameDir, name), 'utf8')).join('\n');
