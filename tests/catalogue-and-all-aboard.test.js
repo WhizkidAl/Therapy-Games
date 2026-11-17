@@ -221,6 +221,33 @@ test('the page embeds the same demo config and does not store results', () => {
   assert.equal(rules.includes('fetch('), false);
 });
 
+test('Station Pup mixes up once and the parent judgement stays correct', () => {
+  let state = place(fresh(), { child: ['fell'], opponent: ['bell', 'spell'] });
+  state.players.opponent.name = 'Station Pup';
+  state = engine.beginAsk(state, 'child', cardId(state, 'spell'));
+  state = engine.judgeAsk(state, true);
+  assert.equal(state.phase, 'repair-choose');
+  assert.equal(state.repair.check, 'I heard bell. Do you mean bell or spell?');
+  assert.equal(state.attempts[0].correct, true);
+  assert.equal(state.attempts[0].pupMixUp, true);
+  state = engine.chooseRepair(state, 'show-or-point');
+  state = engine.finishShowRepair(state);
+  state = engine.beginAsk(state, 'child', cardId(state, 'bell'));
+  if (state.phase === 'say') state = engine.judgeAsk(state, true);
+  assert.notEqual(state.phase, 'repair-choose');
+});
+
+test('play screens avoid the probe-word list', () => {
+  const banned = ['fan', 'feet', 'fish', 'fork', 'spoon', 'spot', 'spider', 'space', 'smile', 'small', 'smash', 'smudge', 'van', 'vest', 'vase', 'vet', 'bat', 'bus', 'boat', 'ship', 'shoe', 'jump', 'jam', 'stop', 'star', 'snap', 'snow', 'stars'];
+  const dir = path.join(root, 'speech-language/speech-sounds/all-aboard');
+  const texts = fs.readdirSync(dir).filter((name) => /\.(html|js|json|css)$/.test(name)).map((name) => fs.readFileSync(path.join(dir, name), 'utf8'));
+  const blob = texts.join('\n');
+  banned.forEach((word) => {
+    const hit = new RegExp('\\b' + word + '\\b', 'i').exec(blob);
+    assert.equal(hit, null, word);
+  });
+});
+
 test('catalogue matches its schema and lists real pages', () => {
   const errors = validateSchema(schema, catalogue);
   assert.deepEqual(errors, [], errors.join('; '));

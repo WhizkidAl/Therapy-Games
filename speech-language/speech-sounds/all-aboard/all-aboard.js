@@ -585,6 +585,66 @@
     return recordRepair(state, worked === true, null);
   }
 
+  function partnerCard(state, cardId) {
+    const card = state.cards[cardId];
+    if (!card) return null;
+    const mates = state.trainCards.filter((item) => item.setId === card.setId && item.id !== card.id);
+    return mates.find((item) => item.role === 'engine') || mates[0] || null;
+  }
+
+  function stationMixUp(state) {
+    if (state.phase !== 'say' || !state.request) return state;
+    const intended = state.cards[state.request.cardId];
+    const heard = partnerCard(state, intended.id);
+    if (!heard || state.mixUpsUsed >= state.config.maxMixUps) return state;
+    state.pupMixUpDone = true;
+    state.attempts.push({
+      kind: 'ask',
+      playerId: state.request.asker,
+      intendedWordId: intended.wordId,
+      intendedText: intended.text,
+      heardWordId: heard.wordId,
+      heardText: heard.text,
+      setId: intended.setId,
+      correct: true,
+      pupMixUp: true,
+      level: state.levelId,
+      wild: state.request.wild,
+      at: new Date(state.now).toISOString()
+    });
+    const got = giveCard(state, state.request.asker, heard.id);
+    state.mixUpsUsed += 1;
+    const speaker = state.players.opponent.computer ? state.players.opponent.name : 'Listener';
+    state.repair = {
+      intendedCardId: intended.id,
+      heardCardId: heard.id,
+      received: got,
+      check: fillCheck(state.config.repairCheck, heard.text, intended.text),
+      speaker,
+      strategyId: null,
+      strategyLabel: null,
+      kind: null,
+      pupMixUp: true
+    };
+    state.phase = 'repair-choose';
+    state.pendingHeardId = null;
+    state.outcome = speaker + ' heard ' + heard.text + '.';
+    state.message = speaker + ' checks what you meant.';
+    return state;
+  }
+
+  function judgeAsk(state, gotIt) {
+    if (state.phase !== 'say' || !state.request) return state;
+    if (gotIt && state.players.opponent.computer && !state.pupMixUpDone && state.mixUpsUsed < state.config.maxMixUps) {
+      return stationMixUp(state);
+    }
+    const heard = gotIt ? state.cards[state.request.cardId] : partnerCard(state, state.request.cardId);
+    if (!heard) return state;
+    state.pendingHeardId = heard.id;
+    state.phase = 'confirm';
+    return confirmHeard(state, true);
+  }
+
   function allTrainsComplete(state) {
     return state.setIds.every((setId) => state.players.child.complete.includes(setId) || state.players.opponent.complete.includes(setId));
   }
@@ -810,6 +870,8 @@
     chooseRepair,
     finishShowRepair,
     finishMeaningRepair,
+    judgeAsk,
+    stationMixUp,
     backToStrategies,
     answerAsk,
     setLevel,
