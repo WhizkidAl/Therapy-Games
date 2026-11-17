@@ -46,6 +46,10 @@ The database currently restricts **each clinician to their own child records**; 
 
 The site is public *code*, not public clinical records. Data go via authenticated Supabase REST with RLS. Use only pseudonymous codes within the application until privacy/governance arrangements are reviewed.
 
+## All Aboard!
+
+`all-aboard/` is a separate generic card game, not this clinician workspace. It takes contrast sets from a config object and emits a results message for a host app. It does not sign in, store responses, or call Supabase. Status: **built**. The contract is in [CATALOGUE.md](../../CATALOGUE.md).
+
 ## Next engineering work
 
 - Complete live clinician login and one-session smoke test on the published URL.
