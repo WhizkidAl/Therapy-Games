@@ -1,0 +1,11 @@
+/* Short game effects. Respects the saved sound switch and reduced motion. */
+(function(){let ctx;
+function context(){const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;try{ctx=ctx||new C();if(ctx.state==='suspended')ctx.resume().catch(()=>{});return ctx;}catch(e){return null;}}
+function sound(ok,volume){const c=context();if(!c)return;const now=c.currentTime,g=c.createGain();g.gain.value=Math.max(0,Math.min(1,volume))*.45;g.connect(c.destination);
+function tone(f,t,len,type='sine'){const o=c.createOscillator(),a=c.createGain();o.type=type;o.frequency.value=f;a.gain.setValueAtTime(.0001,now+t);a.gain.exponentialRampToValueAtTime(.18,now+t+.02);a.gain.exponentialRampToValueAtTime(.0001,now+t+len);o.connect(a);a.connect(g);o.start(now+t);o.stop(now+t+len+.02);}
+function noise(t,len,cutoff,amp){const buffer=c.createBuffer(1,Math.ceil(c.sampleRate*len),c.sampleRate),d=buffer.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);const n=c.createBufferSource(),filter=c.createBiquadFilter(),a=c.createGain();n.buffer=buffer;filter.type='lowpass';filter.frequency.value=cutoff;a.gain.value=amp;n.connect(filter);filter.connect(a);a.connect(g);n.start(now+t);}
+if(ok){[523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.35,'triangle'));for(let i=0;i<12;i++)noise(.3+i*.06,.12,2200,.3);noise(.15,.8,200,.7);noise(.75,.6,260,.6);}else{tone(190,0,.15,'triangle');tone(130,.13,.2,'triangle');}
+setTimeout(()=>g.disconnect(),2200);}
+function bursts(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const host=document.getElementById('celebration');if(!host)return;host.replaceChildren();const colors=['#ffce4b','#f26262','#56d6df','#ad82f4','#8de39c'];for(let b=0;b<3;b++)for(let i=0;i<14;i++){const el=document.createElement('i'),a=i/14*Math.PI*2,r=65+b*12;el.style.cssText=`left:${28+b*22}%;top:${34+(b%2)*13}%;--dx:${Math.cos(a)*r}px;--dy:${Math.sin(a)*r}px;background:${colors[i%5]};animation-delay:${b*.16}s`;host.append(el);}setTimeout(()=>host.replaceChildren(),1700);}
+window.AboardFeedback={play(ok,settings={}){if(settings.effectsOn===false||settings.muted)return;if(ok)bursts();sound(ok,settings.effectsVolume??.55);},unlock:context};
+})();

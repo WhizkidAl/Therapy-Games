@@ -22,6 +22,7 @@
   let strategy = null;
   let splitOff = false;
   let responseNote = '';
+  let responseSaved = true;
   let introOpen = false;
   let storageOK = true;
   let usedHelp = false;
@@ -73,6 +74,10 @@
         trains: saved.collection.trains.length
       });
     }
+    saved.collection = AboardSummary.cleanCollection(saved.collection, collect);
+    const bonus = saved.sessions.reduce((n,s)=>n+(s.awards||[]).filter(a=>a.id==='bonus' && (!saved.collectionResetAt || new Date(a.at||s.at)>new Date(saved.collectionResetAt))).length,0);
+    saved.tickets = saved.collection.animals.length + saved.collection.trains.length + bonus;
+    if(typeof saved.effectsOn!=='boolean')saved.effectsOn=true;
     return saved;
   }
   function save() {
@@ -128,10 +133,10 @@
     const match = set.words.find((item) => item.text.toLowerCase() === typed.toLowerCase() || line(item).toLowerCase() === typed.toLowerCase());
     if (match) return match;
     const base = set.words[0];
-    return { id: base.id, onset: base.onset, text: typed, phrase: typed, sentence: typed, clues: base.clues };
+    return { id: null, onset: '', text: typed, phrase: typed, sentence: typed, clues: [['Group','What kind of thing is it?'],['Action','What does it do?'],['Place','Where would you find it?'],['Appearance','What does it look like?']] };
   }
   function countLine() {
-    return store.collection.animals.length + ' of 24 animals, ' + store.collection.trains.length + ' of 24 trains';
+    return 'Animals: '+store.collection.animals.length+' / '+collect.animals.length+' · Vehicles: '+store.collection.trains.length+' / '+collect.trains.length;
   }
   function ensureDeal() {
     if (!store.deal) store.deal = { animals: [], trains: [] };
@@ -308,12 +313,14 @@
     }
     if (hunt && card.item.id === hunt.id) {
       findStep = 'mark';
+      AboardFeedback.play(true,store);
       current = card.item;
       say([{ text: turn === 'child' ? 'You found it! Now say the whole word: ' + showName(current.id) + '.' : 'You found it!', who: 'pig' }]);
       render();
       return;
     }
     findStep = 'miss';
+    AboardFeedback.play(false,store);
     current = card.item;
     say([{ text: 'Uh oh! What word is it?', who: 'pup' }]);
     render();
@@ -343,16 +350,17 @@
     pill.replaceChildren();
     pill.append(h('img', { src: 'assets/ticket.webp', alt: '' }));
     const total = (screen === 'home' || screen === 'grown' || screen === 'album' || screen === 'progress' || screen === 'how') ? store.tickets : sessionTickets;
-    pill.append(h('span', { text: store.tickets + ' tickets collected' }));
+    pill.append(h('span', { text: store.tickets + ' tickets earned in this browser' }));
+    if(session && ['r1','r2','r3','yay','award','rate'].includes(screen))pill.append(h('span',{class:'game-ticket-count',text:sessionTickets+' earned this game'}));
   }
 
   function setDad(on) {
     $('dad').hidden = !on || (roundNo === 1 && turn === 'dad');
     $('grown').hidden = on || screen === 'award';
-    const ready = (screen === 'r1' && ['mark','miss'].includes(findStep)) || (screen === 'r2' && ['say','help'].includes(phase)) || (screen === 'r3' && !!strategy && !introOpen);
+    const ready = (screen === 'r1' && ['mark','miss'].includes(findStep)) || (screen === 'r2' && ['say','help'].includes(phase)) || (screen === 'r3' && !!strategy && !introOpen && responseSaved);
     ['own','with','split','not-yet'].forEach(id => { $(id).disabled = !ready; });
-    $('tips').disabled = !ready;
-    $('dad-prompt').textContent = ready ? (roundNo === 3 ? 'Dad: how did this strategy go? Choose one to save.' : 'Dad: how did the whole word go? Choose one to save.') : 'Dad: wait for the word or strategy, then choose one.';
+    $('tips').disabled = !current || (roundNo===3&&!strategy);
+    $('dad-prompt').textContent = ready ? (roundNo === 3 ? 'Dad: how did this strategy go? Choose one to save.' : 'Dad: how did the whole word go? Choose one to save.') : (roundNo===3 && strategy && !responseSaved ? 'Dad: press Save response, then choose how it went.' : 'Dad: wait for the word or strategy, then choose one.');
     $('word-set').hidden = !(screen === 'r3' || screen === 'grown');
     const box = $('word-box');
     if (document.activeElement !== box) box.value = practiceText();
@@ -400,7 +408,7 @@
   }
 
   function placeCard(id) {
-    if (carriages.length < 4) carriages.push(id);
+    if (id && carriages.length < 4) carriages.push(id);
     fly = null;
   }
 
@@ -409,6 +417,7 @@
     usedHelp = false;
     strategy = null;
     responseNote = '';
+    responseSaved = true;
     splitOff = false;
     if (roundNo === 1) {
       if (slots <= 0) return finishThisRound();
@@ -435,13 +444,14 @@
 
   function score(support) {
     if (roundNo === 2 && !['say','help'].includes(phase)) return;
-    if (roundNo === 3 && introOpen) return;
+    if (roundNo === 3 && (introOpen || !responseSaved)) return;
     if (!current || screen === 'yay' || screen === 'award') return;
     if (roundNo === 3 && !strategy) {
       $('live').textContent = 'Pick a strategy card first.';
       return;
     }
     if (roundNo === 3 && doneStrats[strategy]) return;
+    if (roundNo!==1 || turn==='child') AboardFeedback.play(support!=='not_yet',store);
     if (roundNo === 1) {
       if (findStep === 'miss') {
         if (turn === 'child') record(support);
@@ -499,15 +509,16 @@
 
   function takeTicket(kind) {
     if(screen !== 'award') return;
+    if(session?.awards.some(a=>a.round===roundNo)) return;
     const item = nextItem(kind);
     if (item) {
       store.collection[kind].push(item.id);
       
-      if (session) session.awards.push({ kind: kind, id: item.id, label: item.label });
+      if (session) session.awards.push({ kind: kind, id: item.id, label: item.label, round:roundNo,at:new Date().toISOString() });
       persistSession();
     }
     store.tickets += 1; sessionTickets += 1;
-    if (!item && session) session.awards.push({kind:kind,id:'bonus',label:'Bonus ticket'});
+    if (!item && session) session.awards.push({kind:kind,id:'bonus',label:'Bonus ticket',round:roundNo,at:new Date().toISOString()});
     persistSession();
     const list = selectedRounds();
     const index = list.indexOf(roundNo);
@@ -538,7 +549,7 @@
       screen = 'r3';
     }
     if (number === 2) promptFirstSound();
-    if (number === 3) { responseNote = ''; introOpen = !store.repairIntroSeen; say([{ text: 'Round 3. Choose a way to help me understand.', who: 'pup' }]); }
+    if (number === 3) { responseNote = ''; responseSaved=true; introOpen = !store.repairIntroSeen; say([{ text: 'Round 3. Choose a way to help me understand.', who: 'pup' }]); }
     render();
   }
 
@@ -611,6 +622,7 @@
     return box;
   }
   function hintPanel() {
+    if(!current.id)return h('div',{class:'hint-panel',text:'Dad: model the key word clearly, then let your child try it. Choose how much help was needed.'});
     const family = words.sets.find(group => group.words.some(item => item.id === current.id)) || set;
     const parts = [current.onset, family.rhyme];
     const box = h('div', { class: 'hint' });
@@ -677,10 +689,10 @@
       stage.append(h('div', { class: 'count-pill', text: 'Look at every picture. Remember where it is.' }));
       stage.append(h('button', {type:'button',class:'nav-btn',id:'ready-cards',text:'Ready - turn the cards over',on:hideDeal}));
     }
-    const row = h('div', { class: 'find-row' });
+    const row = h('div', { class: 'find-row' + (findStep==='play'?' awaiting-card':'') });
     table.forEach((card, index) => {
       if (card.gone) {
-        row.append(h('div', { class: 'find-card', 'aria-hidden': 'true' }));
+        row.append(h('div', { class: 'find-card gone', 'aria-hidden': 'true' }));
         return;
       }
       const button = h('button', {
@@ -688,6 +700,7 @@
         class: 'find-card' + (card.down ? ' down' : '') + (dealing && !reduce ? ' deal' : ''),
         style: findStep === 'deal' ? 'animation-delay:' + (index * 90) + 'ms' : '',
         'aria-label': card.down ? 'Card ' + card.n : showName(card.item.id),
+        'aria-disabled': findStep!=='play'?'true':'false',
         on: () => onFindTap(card.uid)
       });
       const inner = h('span', { class: 'inner' });
@@ -737,6 +750,8 @@
   }
   function pickTile(tile, grid) {
     if (phase !== 'pick') return;
+    if(session){if(!session.soundChoices)session.soundChoices=[];session.soundChoices.push({word:current.id,selected:tile,correct:tile===current.onset,at:new Date().toISOString()});persistSession();}
+    AboardFeedback.play(tile===current.onset,store);
     if (tile !== current.onset) {
       const button = [...grid.children].find((item) => item.textContent === tile);
       if (button) {
@@ -756,12 +771,13 @@
     if (introOpen) return repairLesson();
     const stage = h('div', { class: 'playfield' + (phase === 'help' ? ' wide' : '') });
     const main = h('div', { class: 'play-main' });
+    main.append(h('p',{class:'round3-instruction',text:!strategy ? (Object.values(doneStrats).some(Boolean)?'Choose another card without a tick.':'1. Touch a repair card. Then use that way to help Dad understand.') : '2. '+(strategy==='key'?'Say the important word.':strategy==='show'?'Point to it, show it, or act it out.':'Use different words, or describe it.')+' 3. Dad: save a note if useful, then choose how it went.'}));
     const band = h('div', { class: 'play-main rowish fit' });
     const card = h('div', { class: 'float-card' });
-    card.append(h('img', { src: 'assets/cv_card_' + current.id + '.webp', alt: showName(current.id) }));
+    if(current.id)card.append(h('img', { src: 'assets/cv_card_' + current.id + '.webp', alt: showName(current.id) }));
     card.append(h('div', { class: 'caption', text: practiceText() }));
     band.append(card);
-    const strats = h('div', { class: 'strats' });
+    const strats = h('div', { class: 'strats' + (!strategy?' awaiting-strategy':'') });
     [['key', 'Say the key word'], ['show', 'Show or point'], ['way', 'Say it another way']].forEach((item) => {
       const button = h('button', {
         type: 'button',
@@ -772,6 +788,7 @@
           if (doneStrats[item[0]]) return;
           strategy = item[0];
           responseNote = '';
+          responseSaved=true;
           phase = 'say';
           render();
         }
@@ -786,7 +803,11 @@
     if (strategy) {
       const label=h('label',{class:'response-label',text:strategy==='way'?'Dad: what other words did he use? (optional)':strategy==='show'?'Dad: what did he show or do? (optional)':'Dad: what key word did he say? (optional)'});
       const input=h('input',{id:'response-note',type:'text',maxlength:200,value:responseNote,'aria-label':'What he said or did'});
-      input.addEventListener('input',()=>{responseNote=input.value;checkpoint();});label.append(input);main.append(label);
+      input.addEventListener('input',()=>{responseNote=input.value;responseSaved=!responseNote.trim();setDad(true);checkpoint();const status=$('note-status');if(status)status.textContent=responseSaved?'No note added. Choose how it went above.':'Press Save response or Enter to keep this note.';});
+      const form=h('form',{class:'response-form'});label.append(input);form.append(label);
+      form.append(h('button',{type:'submit',class:'nav-btn',id:'save-response',text:'Save response'}));
+      form.append(h('span',{id:'note-status',role:'status',text:responseSaved&&responseNote?'Response saved. Choose how it went above.':'Optional: add words or a gesture, then press Save response.'}));
+      form.addEventListener('submit',e=>{e.preventDefault();responseSaved=true;checkpoint();render();});main.append(form);
     }
     main.append(h('button',{type:'button',class:'nav-btn',text:'Learn with Station Pup',on:()=>{introOpen=true;render();}}));
     stage.append(main);
@@ -812,7 +833,7 @@
   }
   function checkpoint() {
     if(!session || !['r1','r2','r3','yay','award','rate'].includes(screen)) return;
-    store.resume={sessionId:session.id,setId:set.id,level,screen,roundNo,phase,slots,used,current,queue,step,tiles,strategy,responseNote,introOpen,usedHelp,sessionTickets,roundCounts,carriages,yayWord,doneStrats,table,hunt,turn,hands,findStep,openUid,talk};
+    store.resume={sessionId:session.id,setId:set.id,level,screen,roundNo,phase,slots,used,current,queue,step,tiles,strategy,responseNote,responseSaved,introOpen,usedHelp,sessionTickets,roundCounts,carriages,yayWord,doneStrats,table,hunt,turn,hands,findStep,openUid,talk};
     save();
   }
   function resumePractice() {
@@ -820,8 +841,9 @@
     session=store.sessions.find(s=>s.id===r.sessionId);if(!session){store.resume=null;save();render();return;}
     set=words.sets.find(s=>s.id===r.setId)||words.sets[0];
     store.roundsOn = {1:session.rounds.includes(1),2:session.rounds.includes(2),3:session.rounds.includes(3)};
-    ({level,screen,roundNo,phase,slots,used,current,queue,step,tiles,strategy,responseNote,introOpen,usedHelp,sessionTickets,roundCounts,carriages,yayWord,doneStrats,table,hunt,turn,hands,findStep,openUid,talk}=r);
+    ({level,screen,roundNo,phase,slots,used,current,queue,step,tiles,strategy,responseNote,responseSaved,introOpen,usedHelp,sessionTickets,roundCounts,carriages,yayWord,doneStrats,table,hunt,turn,hands,findStep,openUid,talk}=r);
     dealing=false;
+    if(typeof responseSaved!=='boolean')responseSaved=true;
     if(screen==='yay') {
       if(roundNo===1){turn=turn==='child'?'dad':'child';screen='r1';phase='pick';nextHunt(false);}
       else {if(yayWord)placeCard(yayWord.id);afterCard();}
@@ -843,7 +865,7 @@
     });
     wrap.append(choices);
     wrap.append(h('button', { type: 'button', class: 'play-btn slim', id: 'play', text: 'Play all rounds', on: ()=>startChosenRounds([1,2,3]) }));
-    wrap.append(h('button',{type:'button',class:'nav-btn',text:'Dad: progress',on:()=>openSheet('progress')}));
+    wrap.append(h('button',{type:'button',class:'nav-btn',text:'Dad: progress summary',on:()=>openSheet('progress')}));
     const last=store.sessions.at(-1);
     if(last) wrap.append(h('p',{class:'count-pill',text:'Last practice: '+whenLabel(last.at)+' · '+last.attempts.length+' recorded turns · '+(last.status==='completed'?'finished':'in progress')}));
     wrap.append(h('p',{class:'note',text:storageOK?'Progress and tickets stay in this browser on this device.':'Saving is unavailable in this browser. Export progress before closing.'}));
@@ -953,6 +975,13 @@
     mute.append(h('i', {}));
     voiceRow.append(mute);
     panel.append(voiceRow);
+    const effects=h('div',{class:'shop'});
+    effects.append(h('button',{type:'button',class:'nav-btn',text:store.effectsOn?'Game sounds & celebrations: on':'Game sounds & celebrations: off',on:()=>{store.effectsOn=!store.effectsOn;save();render();}}));
+    const volumeLabel=h('label',{text:'Effect volume '});const volume=h('input',{type:'range',min:0,max:1,step:.05,value:store.effectsVolume??.55,'aria-label':'Effect volume'});
+    volume.addEventListener('input',()=>{store.effectsVolume=Number(volume.value);save();});volumeLabel.append(volume);effects.append(volumeLabel);panel.append(effects);
+    const reset=h('details',{class:'ticket-reset'});reset.append(h('summary',{text:'Clear test tickets'}));reset.append(h('p',{text:'This clears only the ticket collection in this browser. Speech practice records stay saved.'}));
+    const confirm=h('input',{type:'checkbox',id:'confirm-tickets'});const label=h('label',{text:' I want to begin a fresh ticket collection. '});label.prepend(confirm);reset.append(label);
+    reset.append(h('button',{type:'button',class:'nav-btn',text:'Clear ticket collection',on:()=>{if(!confirm.checked)return;store.collection={animals:[],trains:[]};store.tickets=0;store.deal={animals:[],trains:[]};store.collectionResetAt=new Date().toISOString();sessionTickets=0;if(store.resume)store.resume.sessionTickets=0;save();render();}}));panel.append(reset);
     const links = h('div', { class: 'nav-row' });
     links.append(h('button', { type: 'button', class: 'nav-btn', text: 'How to play', on: () => openSheet('how') }));
     links.append(h('button', { type: 'button', class: 'nav-btn', text: 'Progress', on: () => openSheet('progress') }));
@@ -1054,9 +1083,24 @@
     const panel = h('div', { class: 'panel how' });
     panel.append(h('h2', { text: 'Progress' }));
     panel.append(h('p', { class: 'note', text: 'Saved in this browser only. Online progress saving is not connected in this test version.' }));
-    const totals={independent:0,help:0,separated:0,not_yet:0};store.attempts.forEach(a=>{if(a.support in totals)totals[a.support]++;});
-    panel.append(h('p',{class:'count-pill',text:Object.entries(totals).map(([key,n])=>howText(key)+': '+n).join(' · ')}));
-    panel.append(h('p',{text:'These are Dad’s reports of support and outcome, not an automatic speech-accuracy score. Listening choices are recorded separately.'}));
+    const report=AboardSummary.summarise(store.sessions);
+    if(report.empty)panel.append(h('p',{text:'Play a game and record how the turns went. A summary will appear here.'}));
+    else {
+      const summary=h('section',{class:'progress-summary'});
+      summary.append(h('h3',{text:'Latest practice · '+whenLabel(report.latest.at)+(report.latest.status==='completed'?'':' · in progress')}));
+      summary.append(h('p',{class:'summary-headline',text:report.headline}));
+      if(report.speech.total){
+        summary.append(h('p',{text:'Saying words: '+report.speech.counts.independent+' of '+report.speech.total+' turns without help ('+report.speech.independentPercent+'%).'}));
+        const bars=h('div',{class:'support-bars'});Object.entries(report.speech.counts).forEach(([key,n])=>{const row=h('div',{class:'support-row'});row.append(h('span',{text:howText(key)+': '+n}));row.append(h('meter',{min:0,max:report.speech.total,value:n,'aria-label':howText(key)}));bars.append(row);});summary.append(bars);
+        summary.append(h('p',{text:report.comparison}));
+      }
+      if(report.listening.total)summary.append(h('p',{text:'Finding pictures: '+report.listening.correct+' of '+report.listening.total+' listening choices matched the requested word.'}));
+      if(report.sounds.total)summary.append(h('p',{text:'First sounds: '+report.sounds.correct+' of '+report.sounds.total+' sound choices matched. This includes choices before a correction.'}));
+      if(report.strategies.length){summary.append(h('h3',{text:'Ways to help Dad understand'}));report.strategies.forEach(r=>summary.append(h('p',{text:strategyName(r.id)+': '+r.counts.independent+' without help, '+(r.counts.help+r.counts.separated)+' with support, '+r.counts.not_yet+' not yet.'})));}
+      summary.append(h('h3',{text:'Last 7 days'}));summary.append(h('p',{text:report.recentGames+' completed games across '+report.recentDays+' practice days; '+report.recentTurns+' recorded turns.'}));
+      summary.append(h('p',{class:'note',text:'Based on Dad’s ratings, not automatic speech scoring. Different words and levels can need different amounts of help.'}));panel.append(summary);
+    }
+    const details=h('details',{class:'raw-records'});details.append(h('summary',{text:'Detailed records by week'}));
     const weeks = {};
     store.sessions.forEach((item) => {
       const key = weekKey(item.at);
@@ -1069,7 +1113,8 @@
       const block = h('div', { class: 'week' });
       block.append(h('h3', { text: weekLabel(key) }));
       weeks[key].slice().reverse().forEach((item) => {
-        const card = h('div', { class: 'sess' });
+        const card = h('details', { class: 'sess' });
+        card.append(h('summary',{text:whenLabel(item.at)+' · '+(item.attempts||[]).length+' recorded turns'}));
         if(item.listening?.length) card.append(h('div',{text:'Listening: '+item.listening.filter(a=>a.correct).length+' / '+item.listening.length+' correct selections'}));
         const rounds = (item.rounds || []).map((n) => 'Round ' + n).join(', ');
         card.append(h('div', { text: whenLabel(item.at) + ' · ' + (item.level || 'word') + ' · ' + rounds }));
@@ -1080,11 +1125,12 @@
           if (attempt.response) bits.push('Said / did: '+attempt.response);
           card.append(h('div', { text: bits.join(' · ') }));
         });
-        card.append(h('div', { text: 'Rating: ' + (item.rating || 'not yet') + ' · ' + (item.animals || 0) + ' of 24 animals, ' + (item.trains || 0) + ' of 24 trains' }));
+        card.append(h('div', { text: 'Enjoyment: ' + (item.rating || 'not yet') + ' · Tickets earned this game: ' + (item.awards||[]).length }));
         block.append(card);
       });
-      panel.append(block);
+      details.append(block);
     });
+    panel.append(details);
     const row = h('div', { class: 'nav-row' });
     row.append(h('button', { type: 'button', class: 'nav-btn', text: 'Download optional backup', on: exportCsv }));
     row.append(h('button', { type: 'button', class: 'play-btn slim', text: 'Close', on: () => { screen = returnTo; render(); } }));
@@ -1180,7 +1226,7 @@
   function renderYay() {
     const stack = h('div', { class: 'play-main' });
     stack.append(h('div', { class: 'yay', text: 'Thanks for practising!' }));
-    if (yayWord) {
+    if (yayWord && yayWord.id) {
       const card = h('div', { class: 'float-card fly-card' });
       card.append(h('img', { src: 'assets/cv_card_' + yayWord.id + '.webp', alt: showName(yayWord.id) }));
       stack.append(card);
@@ -1253,134 +1299,13 @@
     phase = 'help';
     render();
   });
-  $('word-box').addEventListener('input', () => {
-    store.practiceWord = $('word-box').value;
-    if (screen === 'r3') current = round3Item();
-    save();
+  $('word-set').addEventListener('submit',e=>{
+    e.preventDefault();const value=$('word-box').value.trim();if(!value)return;
+    if(value!==practiceText()){store.practiceWord=value;responseNote='';responseSaved=true;strategy=null;doneStrats={key:false,show:false,way:false};if(screen==='r3')current=round3Item();}
+    save();render();$('word-status').textContent='Word set: '+practiceText();
   });
   ensureDeal();
   render();
 
-  function seedFind(step) {
-    clearTimeout(findTimer);
-    carriages = [];
-    const deck = words.sets[0].words.slice();
-    table = deck.map((item, index) => ({
-      uid: item.id + '-' + index,
-      item: item,
-      down: step !== 'deal',
-      gone: step === 'over',
-      n: index + 1
-    }));
-    hands = { child: ['bell'], dad: ['fell'] };
-    if (step === 'over') hands = { child: ['bell', 'smell', 'spell'], dad: ['fell'] };
-    if (step === 'play' || step === 'deal') {
-      const bell = table.find((card) => card.item.id === 'bell');
-      const fell = table.find((card) => card.item.id === 'fell');
-      if (bell) bell.gone = true;
-      if (fell) fell.gone = true;
-    }
-    hunt = byId('spell');
-    turn = 'child';
-    openUid = null;
-    dealing = false;
-    findStep = step === 'over' ? 'over' : step;
-    roundNo = 1;
-    screen = 'r1';
-    current = null;
-    if (step === 'miss') {
-      const fell = table.find((card) => card.item.id === 'fell');
-      if (fell) { fell.down = false; fell.gone = false; openUid = fell.uid; }
-      hands.dad = [];
-      findStep = 'miss';
-      talk = { text: 'Uh oh! What word is it?', who: 'pup', screen: 'r1' };
-    } else if (step === 'mark') {
-      const spell = table.find((card) => card.item.id === 'spell');
-      if (spell) { spell.down = false; openUid = spell.uid; }
-      current = byId('spell');
-      findStep = 'mark';
-      talk = { text: 'Yay! You got it!', who: 'pig', screen: 'r1' };
-    } else if (step === 'deal') {
-      talk = { text: 'Look at the cards!', who: 'pig', screen: 'r1' };
-      hands = { child: [], dad: [] };
-      table.forEach((card) => { card.gone = false; card.down = false; });
-    } else if (step === 'over') {
-      talk = { text: 'Player 1 wins! You both did so well.', who: 'pig', screen: 'r1' };
-    } else {
-      talk = { text: 'Find spell!', who: 'pup', screen: 'r1' };
-    }
-  }
-
-  window.Aboard = {
-    exportData() { return JSON.parse(JSON.stringify(store)); },
-    version: '3.2.0-review',
-    preview(name) {
-      set = words.sets[0];
-      level = 'word';
-      carriages = ['bell', 'fell'];
-      sessionTickets = 2;
-      roundCounts = { 1: 4, 2: 4, 3: 2 };
-      used = {};
-      slots = 4;
-      current = byId('spell');
-      queue = set.words;
-      step = 0;
-      tiles = words.tilePool.slice();
-      strategy = null;
-      doneStrats = { key: false, show: false, way: false };
-      fly = null;
-      phase = 'pick';
-      store.practiceWord = 'spell';
-      store.roundsOn = { 1: true, 2: true, 3: true };
-      store.findOn = { ell: true, ill: true, in: false };
-      store.findCount = 1;
-      store.muted = false;
-      store.collection = { animals: ['cat', 'dog', 'hen', 'duck', 'frog', 'lion', 'owl'], trains: ['steam', 'tram', 'express', 'metro'] };
-      store.sessions = [
-        {
-          id: 'week-a',
-          at: '2026-11-10T04:00:00.000Z',
-          level: 'word',
-          rounds: [1, 2],
-          rating: 'Yes!',
-          awards: [],
-          attempts: [
-            { round: 1, word: 'bell', support: 'independent', splitOff: false, strategy: '' },
-            { round: 1, word: 'spell', support: 'help', splitOff: true, strategy: '' }
-          ],
-          animals: 3,
-          trains: 1
-        },
-        {
-          id: 'week-b',
-          at: '2026-11-17T04:00:00.000Z',
-          level: 'phrase',
-          rounds: [1, 2, 3],
-          rating: 'Okay',
-          awards: [],
-          attempts: [
-            { round: 3, word: 'spell', support: 'independent', splitOff: false, strategy: 'key' },
-            { round: 3, word: 'spell', support: 'independent', splitOff: false, strategy: 'show' }
-          ],
-          animals: 7,
-          trains: 4
-        }
-      ];
-      if (name === 'home') { screen = 'home'; carriages = []; sessionTickets = store.tickets; }
-      if (name === 'grown') screen = 'grown';
-      if (name === 'round1' || name === 'deal' || name === 'miss' || name === 'win') seedFind(name === 'round1' ? 'play' : name === 'win' ? 'over' : name);
-      if (name === 'card') { screen = 'r1'; phase = 'say'; roundNo = 1; current = byId('bell'); slots = 4; carriages = []; }
-      if (name === 'hint') { seedFind('mark'); phase = 'help'; }
-      if (name === 'yay') { screen = 'yay'; yayWord = null; roundNo = 1; carriages = ['bell', 'fell', 'spell']; }
-      if (name === 'round2') { set = words.sets[1]; screen = 'r2'; phase = 'pick'; roundNo = 2; current = byId('bill'); tiles = words.tilePool.slice(); carriages = []; }
-      if (name === 'round3') { set = words.sets[0]; screen = 'r3'; phase = 'say'; roundNo = 3; current = byId('spell'); strategy = 'show'; doneStrats = { key: true, show: false, way: false }; carriages = ['spell']; }
-      if (name === 'award') { screen = 'award'; roundNo = 1; hands = { child: [], dad: [] }; talk = { text: 'A ticket for you!', who: 'pig', screen: 'award' }; }
-      if (name === 'album') { screen = 'album'; returnTo = 'home'; }
-      if (name === 'progress') { screen = 'progress'; returnTo = 'grown'; }
-      if (name === 'how') { screen = 'how'; returnTo = 'grown'; }
-      if (name === 'rate') screen = 'rate';
-      render();
-    }
-  };
+  window.Aboard = {exportData(){return JSON.parse(JSON.stringify(store));},version:'3.3.0-review'};
 })();
-

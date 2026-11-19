@@ -68,7 +68,7 @@ test('collectable tickets are two sets of 24 and avoid the probe list', () => {
   const collect = require(path.join(gameDir, 'collect.js'));
   assert.equal(collect.animals.length, 24);
   assert.equal(collect.trains.length, 24);
-  const blob = collect.animals.concat(collect.trains).map((item) => item.id + ' ' + item.label).join('\n');
+  const blob = collect.animals.concat(collect.trains).map((item) => item.id + ' ' + item.label).join('\n').replace(/\.stop\(/g, '.audioEnd('); // Web Audio API, not a practice word.
   banned.forEach((word) => {
     assert.equal(new RegExp('\\b' + word + '\\b', 'i').test(blob), false, word);
   });
@@ -78,7 +78,7 @@ test('collectable tickets are two sets of 24 and avoid the probe list', () => {
 
 test('the game files do not use the probe-word list', () => {
   const names = fs.readdirSync(gameDir).filter((name) => /\.(html|js|json|css|sql|md)$/.test(name));
-  const blob = names.map((name) => fs.readFileSync(path.join(gameDir, name), 'utf8')).join('\n');
+  const blob = names.map((name) => fs.readFileSync(path.join(gameDir, name), 'utf8')).join('\n').replace(/\.stop\(/g, '.audioEnd('); // Web Audio API, not a practice word.
   banned.forEach((word) => {
     assert.equal(new RegExp('\\b' + word + '\\b', 'i').test(blob), false, word);
   });
