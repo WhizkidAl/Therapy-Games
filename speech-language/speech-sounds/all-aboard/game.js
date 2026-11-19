@@ -762,7 +762,7 @@
     card.append(h('div', { class: 'caption', text: practiceText() }));
     band.append(card);
     const strats = h('div', { class: 'strats' });
-    [['key', 'Say the key word', 'assets/strat-key-word.png'], ['show', 'Show or point', 'assets/strat-show-point.png'], ['way', 'Say it another way', 'assets/strat-another-way.png']].forEach((item) => {
+    [['key', 'Say the key word'], ['show', 'Show or point'], ['way', 'Say it another way']].forEach((item) => {
       const button = h('button', {
         type: 'button',
         class: 'strat ' + item[0] + (strategy === item[0] ? ' on' : '') + (doneStrats[item[0]] ? ' done' : ''),
@@ -776,9 +776,7 @@
           render();
         }
       });
-      button.append(h('img', { src: item[2], alt: '' }));
-      button.append(h('span',{class:'strategy-label',text:item[1]}));
-      if (item[0] === 'show') button.append(h('img', { class: 'pip', src: 'assets/cv_pic_' + current.id + '.webp', alt: '' }));
+      button.append(h('span', {class:'repair-art repair-'+item[0],role:'img','aria-label':item[1]+' original printed card'}));
       if (doneStrats[item[0]]) button.append(h('span', { class: 'tick', text: '✓' }));
       strats.append(button);
     });
@@ -835,14 +833,23 @@
   function renderHome() {
     const wrap = h('div', { class: 'play-main' });
     if(store.resume) wrap.append(h('button',{type:'button',class:'play-btn',id:'resume',text:'Continue Round '+store.resume.roundNo,on:resumePractice}));
-    wrap.append(h('button', { type: 'button', class: 'play-btn', id: 'play', text: store.resume ? 'Start a new game' : '▶  Play', on: startPractice }));
+    wrap.append(h('h2',{class:'home-heading',text:'Which game shall we play?'}));
+    const choices=h('div',{class:'home-rounds'});
+    const names={1:'Find the card',2:'First sounds',3:'Fix-It practice'};
+    [1,2,3].forEach(n=>{
+      const button=h('button',{type:'button',class:'round-launch',id:'round-start-'+n,on:()=>startChosenRounds([n])});
+      button.append(h('strong',{text:'Play Round '+n}));
+      button.append(h('span',{text:names[n]}));choices.append(button);
+    });
+    wrap.append(choices);
+    wrap.append(h('button', { type: 'button', class: 'play-btn slim', id: 'play', text: 'Play all rounds', on: ()=>startChosenRounds([1,2,3]) }));
     wrap.append(h('button',{type:'button',class:'nav-btn',text:'Dad: progress',on:()=>openSheet('progress')}));
     const last=store.sessions.at(-1);
     if(last) wrap.append(h('p',{class:'count-pill',text:'Last practice: '+whenLabel(last.at)+' · '+last.attempts.length+' recorded turns · '+(last.status==='completed'?'finished':'in progress')}));
     wrap.append(h('p',{class:'note',text:storageOK?'Progress and tickets stay in this browser on this device.':'Saving is unavailable in this browser. Export progress before closing.'}));
     wrap.append(h('p', { class: 'count-pill', text: countLine() }));
     const today = selectedRounds().map((n) => 'Round ' + n).join(', ');
-    wrap.append(h('p', { class: 'note', text: 'Today: ' + (today || 'choose a round') }));
+    wrap.append(h('p', { class: 'note', text: 'Pick one game above, or play all three in order.' }));
     wrap.append(h('button', { type: 'button', class: 'nav-btn', text: 'My collection', on: () => openSheet('album') }));
     return wrap;
   }
@@ -851,6 +858,12 @@
     returnTo = screen === 'grown' ? 'grown' : 'home';
     screen = name;
     render();
+  }
+
+  function startChosenRounds(numbers) {
+    store.roundsOn={1:numbers.includes(1),2:numbers.includes(2),3:numbers.includes(3)};
+    save();
+    startPractice();
   }
 
   function renderGrown() {
@@ -874,6 +887,7 @@
       }));
     });
     panel.append(rounds);
+    panel.append(h('button',{type:'button',class:'nav-btn',id:'play-selected',text:'Start selected rounds',on:startPractice}));
     panel.append(h('p', { class: 'note', text: 'Any mix is fine. Round 3 uses the word box above. Change that word whenever you like.' }));
     panel.append(h('h3', { text: 'Round 1 families' }));
     const families = h('div', { class: 'rounds' });
@@ -1039,7 +1053,7 @@
   function renderProgress() {
     const panel = h('div', { class: 'panel how' });
     panel.append(h('h2', { text: 'Progress' }));
-    panel.append(h('p', { class: 'note', text: 'Saved on this tablet. This is not sent anywhere until you export it.' }));
+    panel.append(h('p', { class: 'note', text: 'Saved in this browser only. Online progress saving is not connected in this test version.' }));
     const totals={independent:0,help:0,separated:0,not_yet:0};store.attempts.forEach(a=>{if(a.support in totals)totals[a.support]++;});
     panel.append(h('p',{class:'count-pill',text:Object.entries(totals).map(([key,n])=>howText(key)+': '+n).join(' · ')}));
     panel.append(h('p',{text:'These are Dad’s reports of support and outcome, not an automatic speech-accuracy score. Listening choices are recorded separately.'}));
@@ -1072,7 +1086,7 @@
       panel.append(block);
     });
     const row = h('div', { class: 'nav-row' });
-    row.append(h('button', { type: 'button', class: 'nav-btn', text: 'Export', on: exportCsv }));
+    row.append(h('button', { type: 'button', class: 'nav-btn', text: 'Download optional backup', on: exportCsv }));
     row.append(h('button', { type: 'button', class: 'play-btn slim', text: 'Close', on: () => { screen = returnTo; render(); } }));
     panel.append(row);
     return panel;
@@ -1118,13 +1132,13 @@
     const panel = h('div', { class: 'panel how' });
     panel.append(h('h2', { text: 'How to play' }));
     [
-      'Choose the rounds in Grown-ups. Round 1, Round 2 and Round 3 can be on together, or just the ones you want today.',
+      'On the home screen, choose Play Round 1, Play Round 2, Play Round 3, or Play all rounds. For another combination, open Choose rounds & settings, select the rounds, then Start selected rounds. Continue resumes an unfinished game; it does not begin at Round 1.',
       'Round 1 is find the card. The pictures stay face up until you tap Ready - turn the cards over. The pup asks for one word, such as Find spell. Tap a card. That card flips. If it is the one, he keeps it and you mark on his own, with help, or sound split off. If it is not, he says the word he turned over, the card flips back, and it is the other go. You take turns. The one with the most cards wins, and you both did well. One family is 4 cards. Two families is 8 cards.',
       'Sit beside him. When he says it by himself, tap Got it on his own. If you had to model it, tap Got it with help. Choose Needed sounds separated when you separated the first sound from the rest. Choose Not yet when it did not happen. Each choice saves and moves on.',
       'Tips shows a model, or another way to say the word. He still keeps that turn.',
       'Round 3 has three cards: Say the key word, Show or point, and Say it another way. Type the word in the box and change it whenever you like. Show or point is a gesture. Record the gesture using Dad’s choices. You can add what he said or did in the note field. The round is done when each card has a tick.',
       'At the end of a round the engineer gives one ticket. He picks an animal ticket or a train ticket and gets a new picture. My collection shows every picture, and how many he has.',
-      'Progress lists each week: the date, the rounds, the level, each word, and the smiley. It is saved on this tablet. Export downloads a file you can send to the therapist.'
+      'Progress lists each week: the date, rounds, level and recorded responses. This test version saves in this browser only; online saving is not connected. Download optional backup is available if you want your own copy.'
     ].forEach((copy) => panel.append(h('p', { text: copy })));
     panel.append(h('button', { type: 'button', class: 'play-btn slim', text: 'Close', on: () => { screen = returnTo; render(); } }));
     return panel;
@@ -1299,7 +1313,7 @@
 
   window.Aboard = {
     exportData() { return JSON.parse(JSON.stringify(store)); },
-    version: '3.1.0-review',
+    version: '3.2.0-review',
     preview(name) {
       set = words.sets[0];
       level = 'word';

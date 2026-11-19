@@ -207,6 +207,18 @@ body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
 #not-yet{background:#fff0db}
 .response-label{display:flex;flex-direction:column;gap:5px;background:#fff8df;border-radius:10px;padding:8px;max-width:100%;font-size:14px}
 .response-label input{font:inherit;padding:8px;border:2px solid #a7aec1;border-radius:7px;width:100%;min-width:250px}
+.home-heading{margin:0;background:#fff9;padding:8px 14px;border-radius:12px;font-size:24px}
+.home-rounds{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.round-launch{background:#fffaf0;border:4px solid #edb94c;border-radius:16px;padding:14px 18px;color:#24315c;min-width:150px;min-height:90px;display:flex;flex-direction:column;gap:6px}
+.round-launch strong{font-size:23px}
+.round-launch span{font-size:16px}
+body[data-screen="home"] #stage{margin:10px 18% 0 8%;align-items:flex-start;padding-top:12px}
+body[data-screen="home"] .play-main{gap:9px;width:100%}
+.repair-art{display:block;width:100%;aspect-ratio:730/620;background-image:url('assets/repair-cards-web.webp');background-size:193.69863% 322.58065%;background-repeat:no-repeat}
+.repair-key{background-position:50.1462% 3.6232%}
+.repair-show{background-position:50.1462% 49.0580%}
+.repair-way{background-position:50.1462% 96.3768%}
+.strat .tick{top:auto;bottom:0;right:0;width:22px;height:22px;line-height:22px;font-size:15px}
 .strategy-label{display:block;font-size:14px;padding:5px;min-height:42px}
 .strat:disabled{opacity:.6;cursor:default}
 .strats{position:relative;z-index:10;flex-wrap:wrap;justify-content:center}
@@ -238,7 +250,7 @@ body[data-screen="home"] #stage{overflow:auto}
   <img class="pig" id="pig" src="assets/pig.webp" alt="">
   <div class="train" id="train" aria-hidden="true"></div>
   <header class="hud">
-    <button type="button" class="grown-btn" id="grown">Grown-ups</button>
+    <button type="button" class="grown-btn" id="grown">Choose rounds &amp; settings</button>
     <div class="title" id="title">All Aboard!</div>
     <button type="button" class="nav-btn" id="pause-game" hidden>Save &amp; home</button>
     <div class="ticket-pill" id="tickets" aria-live="polite"></div>
@@ -259,6 +271,7 @@ body[data-screen="home"] #stage{overflow:auto}
 <script src="words.js"></script>
 <script src="collect.js"></script>
 <script src="game.js"></script>
-<div class="brand">Whiz Kids Therapy · Review 3.1 · Saves on this device</div></body>
+<div class="brand">Whiz Kids Therapy · Review 3.2 · Saves on this device</div></body>
 </html>
+
 
