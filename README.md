@@ -19,9 +19,13 @@ Planned subcategories:
 - `speech-sounds/` — articulation, phonology and speech-sound practice
 - `pragmatics/` — communication interpretation and use where the primary target is pragmatic language
 
-Current game:
+Current games:
 
 - **Word Detective — Semantic Differentiation**: explicit semantic feature comparison, contrastive word-choice challenges and narrative application.
+- **All Aboard!**: train-themed contrast card game for multiple oppositions or minimal pairs. File: `speech-language/speech-sounds/all-aboard/index.html`.
+- **Multiple Oppositions clinician workspace**: generic target, probe, and response tool. File: `speech-language/speech-sounds/multiple-oppositions.html`.
+
+The machine-readable list of pages is `catalogue.json`, with a read-only view at `catalogue.html`. See `CATALOGUE.md`.
 
 ### 2. Literacy
 

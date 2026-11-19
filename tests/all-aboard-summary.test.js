@@ -1,0 +1,11 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');const S=require('../speech-language/speech-sounds/all-aboard/summary.js');
+const a=(support,round=1)=>({word:'bell',support,round});const session=(id,attempts,more={})=>({id,at:'2026-11-19T02:00:00Z',status:'completed',level:'word',setId:'ell',rounds:[1],attempts,...more});
+test('empty history and repair-only practice do not imply speech accuracy',()=>{assert.equal(S.summarise([]).empty,true);const r=S.summarise([session('a',[{...a('help',3),strategy:'way'}])]);assert.equal(r.speech.total,0);assert.equal(r.repairs.total,1);});
+test('four ratings stay separate, including legacy separated sounds',()=>{const r=S.breakdown([a('independent'),a('help'),a('not_yet'),{...a('help'),splitOff:true}]);assert.deepEqual(r.counts,{independent:1,help:1,separated:1,not_yet:1});assert.equal(r.independentPercent,25);});
+test('comparison requires matching words, rounds and level',()=>{const old=session('a',Array(4).fill(a('help'))),latest=session('b',Array(4).fill(a('independent')),{at:'2026-11-19T03:00:00Z'});assert.match(S.summarise([old,latest]).comparison,/More turns/);latest.level='sentence';assert.match(S.summarise([old,latest]).comparison,/will appear/);});
+test('ticket count ignores duplicates and unknown images',()=>{assert.deepEqual(S.cleanCollection({animals:['cat','cat','invalid'],trains:['steam','steam']},{animals:[{id:'cat'}],trains:[{id:'steam'}]}),{animals:['cat'],trains:['steam']});});
+test('speech is grouped by onset and level, with word details and legacy onset recovery',()=>{
+const words={sets:[{words:[{id:'smell',onset:'sm'},{id:'spell',onset:'sp'}]}]};
+const r=S.bySound([session('a',[{...a('separated'),word:'smell'},{...a('help'),word:'spell'},{...a('independent'),word:'smell',level:'phrase'},{...a('independent',3),word:'smell'}]),session('b',[{...a('independent'),word:'smell'}],{at:'2026-11-19T03:00:00Z'})],words);
+assert.equal(r.length,3);const sm=r.find(g=>g.sound==='sm'&&g.level==='word');assert.equal(sm.total,2);assert.equal(sm.counts.separated,1);assert.equal(sm.latest.counts.independent,1);assert.equal(sm.previous.counts.separated,1);assert.equal(sm.words[0].word,'smell');assert.equal(sm.words[0].last,'independent');assert.equal(r.find(g=>g.sound==='sp').counts.help,1);assert.equal(r.find(g=>g.level==='phrase').total,1);
+});
