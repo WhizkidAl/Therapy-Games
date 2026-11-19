@@ -25,6 +25,25 @@
     const strategies=['key','show','way'].map(id=>({id,...breakdown((latest.attempts||[]).filter(a=>a.round===3&&a.strategy===id))})).filter(r=>r.total);
     return {empty:false,latest,speech,repairs,headline,comparison,strategies,listening:{total:listening.length,correct:listening.filter(a=>a.correct).length},sounds:{total:sounds.length,correct:sounds.filter(a=>a.correct).length},recentGames:recent.filter(s=>s.status==='completed').length,recentTurns:recent.reduce((n,s)=>n+(s.attempts||[]).length,0),recentDays:new Set(recent.map(s=>new Date(s.at).toLocaleDateString('en-AU'))).size};
   }
+  function bySound(sessions,catalogue){
+    const lookup=new Map(catalogue.sets.flatMap(s=>s.words).map(w=>[w.id,w.onset]));
+    const groups=new Map();
+    sessions.filter(s=>!['week-a','week-b'].includes(s.id)).slice().sort((a,b)=>new Date(a.at)-new Date(b.at)).forEach(session=>{
+      (session.attempts||[]).filter(a=>[1,2].includes(a.round)).forEach(a=>{
+        const sound=a.onset||lookup.get(a.word),level=a.level||session.level||'word';
+        if(!sound)return;
+        const key=level+':'+sound;if(!groups.has(key))groups.set(key,{sound,level,attempts:[],sessions:new Map(),words:new Map()});
+        const g=groups.get(key);g.attempts.push(a);
+        const sid=session.id||session.at;if(!g.sessions.has(sid))g.sessions.set(sid,{at:session.at,attempts:[]});g.sessions.get(sid).attempts.push(a);
+        if(!g.words.has(a.word))g.words.set(a.word,[]);g.words.get(a.word).push(a);
+      });
+    });
+    return [...groups.values()].map(g=>{
+      const history=[...g.sessions.values()].map(s=>({...s,...breakdown(s.attempts),words:[...new Set(s.attempts.map(a=>a.word))].sort()}));
+      const latest=history.at(-1),previous=history.slice(0,-1).reverse().find(s=>JSON.stringify(s.words)===JSON.stringify(latest.words));
+      return {sound:g.sound,level:g.level,...breakdown(g.attempts),latest,previous,history,words:[...g.words].map(([word,tries])=>({word,...breakdown(tries),last:outcome(tries.at(-1))})).sort((a,b)=>a.word.localeCompare(b.word))};
+    }).sort((a,b)=>['word','phrase','sentence'].indexOf(a.level)-['word','phrase','sentence'].indexOf(b.level)||a.sound.localeCompare(b.sound));
+  }
   function cleanCollection(collection,catalogue){const result={};for(const kind of ['animals','trains']){const known=new Set(catalogue[kind].map(x=>x.id));result[kind]=[...new Set((collection?.[kind]||[]).filter(id=>known.has(id)))];}return result;}
-  return {summarise,breakdown,cleanCollection};
+  return {summarise,bySound,breakdown,cleanCollection};
 });

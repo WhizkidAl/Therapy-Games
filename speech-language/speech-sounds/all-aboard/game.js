@@ -345,6 +345,14 @@
     box.append(cars); box.append(h('img',{class:'engine',src:'assets/engine.webp',alt:''}));
   }
 
+  function fitTrainSpace(){
+    const world=document.querySelector('.world');if(!world)return;
+    if(!['r1','r2','r3','yay'].includes(screen)){world.style.removeProperty('padding-bottom');return;}
+    const bounds=[...document.querySelectorAll('.train,.train .stood')].map(el=>el.getBoundingClientRect());
+    const top=Math.min(...bounds.map(r=>r.top));
+    world.style.paddingBottom=Math.ceil(window.innerHeight-top+12)+'px';
+  }
+  window.addEventListener('resize',()=>requestAnimationFrame(fitTrainSpace));
   function ticketPill() {
     const pill = $('tickets');
     pill.replaceChildren();
@@ -371,6 +379,7 @@
       round: roundNo,
       word: roundNo === 3 ? practiceText() : current.id,
       level: level,
+      onset: roundNo === 3 ? null : current.onset,
       support: support,
       splitOff: support === 'separated',
       tipsOpened: usedHelp,
@@ -1088,12 +1097,25 @@
     else {
       const summary=h('section',{class:'progress-summary'});
       summary.append(h('h3',{text:'Latest practice · '+whenLabel(report.latest.at)+(report.latest.status==='completed'?'':' · in progress')}));
-      summary.append(h('p',{class:'summary-headline',text:report.headline}));
-      if(report.speech.total){
-        summary.append(h('p',{text:'Saying words: '+report.speech.counts.independent+' of '+report.speech.total+' turns without help ('+report.speech.independentPercent+'%).'}));
-        const bars=h('div',{class:'support-bars'});Object.entries(report.speech.counts).forEach(([key,n])=>{const row=h('div',{class:'support-row'});row.append(h('span',{text:howText(key)+': '+n}));row.append(h('meter',{min:0,max:report.speech.total,value:n,'aria-label':howText(key)}));bars.append(row);});summary.append(bars);
-        summary.append(h('p',{text:report.comparison}));
+      summary.append(h('p',{class:'summary-headline',text:'See which starting sounds are becoming easier, and where help or sound separation is still needed.'}));
+      const soundGroups=AboardSummary.bySound(store.sessions,words);
+      for(const practiceLevel of ['word','phrase','sentence']){
+        const groups=soundGroups.filter(g=>g.level===practiceLevel);
+        if(!groups.length)continue;
+        summary.append(h('h3',{text:(practiceLevel==='word'?'Word':practiceLevel==='phrase'?'Phrase':'Sentence')+' level · progress by starting sound'}));
+        groups.forEach(g=>{
+          const block=h('section',{class:'sound-summary','data-sound':g.sound,'data-level':g.level});
+          block.append(h('h4',{text:g.sound.toUpperCase()+' · '+g.words.map(w=>w.word).join(', ')}));
+          const c=g.latest.counts;
+          block.append(h('p',{text:'Latest practice ('+whenLabel(g.latest.at)+'): '+c.independent+'/'+g.latest.total+' without help; '+c.help+' with help; '+c.separated+' needed sounds separated; '+c.not_yet+' not yet.'}));
+          if(g.previous)block.append(h('p',{class:'note',text:'Same words, same level: '+g.previous.counts.independent+'/'+g.previous.total+' without help on '+whenLabel(g.previous.at)+' → '+c.independent+'/'+g.latest.total+' in the latest practice. Sounds separated: '+g.previous.counts.separated+' → '+c.separated+'.'}));
+          const wrap=h('div',{class:'sound-table-wrap'}),table=h('table',{class:'sound-table'}),head=h('tr',{});
+          ['Word','Without help','With help','Sounds separated','Not yet','Latest try'].forEach(label=>head.append(h('th',{scope:'col',text:label})));table.append(head);
+          g.words.forEach(w=>{const row=h('tr',{});row.append(h('th',{scope:'row',text:w.word}));[w.counts.independent,w.counts.help,w.counts.separated,w.counts.not_yet,howText(w.last)].forEach(value=>row.append(h('td',{text:String(value)})));table.append(row);});wrap.append(table);block.append(wrap);
+          block.append(h('p',{class:'note',text:'Word rows count all recorded tries at this level. “Without help” records Dad’s rating for that try; it does not set a mastery target.'}));summary.append(block);
+        });
       }
+      if(!soundGroups.some(g=>g.level==='word'))summary.append(h('p',{text:'No word-level speech ratings yet. Phrase, sentence and repair practice are kept separate.'}));
       if(report.listening.total)summary.append(h('p',{text:'Finding pictures: '+report.listening.correct+' of '+report.listening.total+' listening choices matched the requested word.'}));
       if(report.sounds.total)summary.append(h('p',{text:'First sounds: '+report.sounds.correct+' of '+report.sounds.total+' sound choices matched. This includes choices before a correction.'}));
       if(report.strategies.length){summary.append(h('h3',{text:'Ways to help Dad understand'}));report.strategies.forEach(r=>summary.append(h('p',{text:strategyName(r.id)+': '+r.counts.independent+' without help, '+(r.counts.help+r.counts.separated)+' with support, '+r.counts.not_yet+' not yet.'})));}
@@ -1270,6 +1292,8 @@
     else if (screen === 'progress') stage.append(renderProgress());
     else if (screen === 'how') stage.append(renderHow());
     else if (screen === 'rate') stage.append(renderRate());
+    requestAnimationFrame(fitTrainSpace);
+    document.querySelectorAll('.train img').forEach(img=>img.addEventListener('load',fitTrainSpace,{once:true}));
     showTalk();
     $('live').textContent = talk.text || $('title').textContent;
     $('pause-game').hidden = !['r1','r2','r3','award','rate'].includes(screen);
@@ -1307,5 +1331,6 @@
   ensureDeal();
   render();
 
-  window.Aboard = {exportData(){return JSON.parse(JSON.stringify(store));},version:'3.3.0-review'};
+  window.Aboard = {exportData(){return JSON.parse(JSON.stringify(store));},version:'3.4.0-review'};
 })();
+

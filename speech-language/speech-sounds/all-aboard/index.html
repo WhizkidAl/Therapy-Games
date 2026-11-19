@@ -255,6 +255,18 @@ body[data-screen="home"] #stage{overflow:auto}
 @media(prefers-reduced-motion:reduce){.awaiting-card .find-card:not(.gone),.awaiting-strategy .strat:not(.done){animation:none;outline:3px solid #e5b748}}
 body[data-screen="r3"] .play-main{gap:8px}body[data-screen="r3"] .fit .float-card{width:85px}.response-form .nav-btn{min-height:40px}
 
+
+/* Keep collected cards in their own train area, clear of choices. */
+.stood{height:12vh;max-height:110px;width:auto;max-width:56%;object-fit:contain;left:50%;transform:translateX(-50%);bottom:94%}
+body[data-screen="r2"] #stage,body[data-screen="r3"] #stage{overflow:auto;align-items:flex-start;padding:6px}
+body[data-screen="r2"] .playfield,body[data-screen="r3"] .playfield{height:auto;min-height:100%;align-items:start}
+body[data-screen="r2"] .play-main{display:grid;grid-template-columns:minmax(100px,170px) minmax(240px,1fr);align-items:center;gap:10px}
+body[data-screen="r2"] .pic-only{grid-column:1;width:100%;max-width:170px}
+body[data-screen="r2"] .play-main>.nav-btn{grid-column:1;grid-row:2}
+body[data-screen="r2"] .tiles{grid-column:2;grid-row:1 / span 2;grid-template-columns:repeat(4,minmax(48px,1fr))}
+.sound-summary{border:2px solid #d6dfeb;border-radius:12px;padding:12px;margin:12px 0}.sound-summary h4{font-size:21px;margin:0 0 10px}.sound-table-wrap{overflow:auto}.sound-table{width:100%;border-collapse:collapse;font-size:14px}.sound-table th,.sound-table td{padding:9px 6px;border-bottom:1px solid #d6dfeb;text-align:left}.sound-table thead,.sound-table tr:first-child{background:#edf2f8}
+@media(max-width:900px){body[data-screen="r2"] .playfield{grid-template-columns:1fr}body[data-screen="r2"] .play-side{justify-self:center}body[data-screen="r3"] .playfield{display:block}body[data-screen="r3"] .play-main.rowish{flex-wrap:wrap}body[data-screen="r3"] .strats{flex-wrap:wrap;justify-content:center}}
+@media(max-width:540px){body[data-screen="r2"] #stage,body[data-screen="r3"] #stage{margin-right:8px}body[data-screen="r2"] .play-main{grid-template-columns:1fr}body[data-screen="r2"] .pic-only{justify-self:center;max-width:90px}body[data-screen="r2"] .tiles{grid-column:1;grid-row:3}body[data-screen="r2"] .play-main>.nav-btn{justify-self:center}.sound-table{font-size:12px}}
 </style>
 </head>
 <body>
@@ -289,6 +301,6 @@ body[data-screen="r3"] .play-main{gap:8px}body[data-screen="r3"] .fit .float-car
 <script src="summary.js"></script>
 <script src="feedback.js"></script>
 <script src="game.js"></script>
-<div class="brand">Whiz Kids Therapy · Review 3.3 · Saves on this device</div></body>
+<div class="brand">Whiz Kids Therapy · Review 3.4 · Saves on this device</div></body>
 </html>
 
