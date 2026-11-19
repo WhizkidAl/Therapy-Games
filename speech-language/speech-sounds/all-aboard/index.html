@@ -166,10 +166,10 @@ body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
 .mystery button{background:transparent}
 .mystery img{width:min(22vw,180px)}
 .faces{display:flex;gap:18px;justify-content:center}
-.face{width:clamp(88px,16vh,120px);height:clamp(88px,16vh,120px);border-radius:50%;border:6px solid #fff;font-size:clamp(44px,8vh,64px);box-shadow:0 6px 0 #d5d8df}
-.face.yes{background:#2f9e4f}
-.face.ok{background:#f6c445}
-.face.no{background:#3d6fd6}
+.faces .face{width:clamp(88px,16vh,120px);height:clamp(88px,16vh,120px);border-radius:50%;border:6px solid #fff;font-size:clamp(44px,8vh,64px);box-shadow:0 6px 0 #d5d8df}
+.faces .face.yes{background:#2f9e4f}
+.faces .face.ok{background:#f6c445}
+.faces .face.no{background:#3d6fd6}
 .caption{font-weight:700;font-size:22px}
 .reveal{background:#fff8df;border-radius:16px;padding:12px;font-size:24px;font-weight:700}
 @media (max-height:780px){
@@ -181,6 +181,53 @@ body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
   *{animation:none!important;transition:none!important}
 }
 @keyframes wiggle{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* Review v3: one upright card per carriage, aligned wheels and a smaller engine. */
+.engine{width:22%;max-height:27vh;object-fit:contain;object-position:bottom}
+.cars{align-items:flex-end;gap:3px;padding-left:5px}
+.car-unit{position:relative;min-width:0}
+.stood{left:22%;bottom:53%;width:56%;height:auto;aspect-ratio:5/7;object-fit:contain;box-shadow:0 2px 5px #24315c40;z-index:5}
+.car-owner{position:absolute;bottom:21%;left:16%;right:16%;text-align:center;font-size:clamp(7px,1vw,12px);background:#fff7df;color:#24315c;z-index:8;border-radius:3px}
+.carriage{position:relative;z-index:6}
+.world{padding-bottom:18vh}
+.find-row{max-height:48vh}
+.find-card{max-height:37vh}
+.brand{font:11px system-ui;position:fixed;bottom:2px;left:6px;z-index:15;background:#fff9;padding:2px 6px;border-radius:4px}
+[hidden]{display:none!important}
+/* Review 3.1: stable card geometry and a distinct parent recording bar. */
+[hidden]{display:none!important}
+.find-card .face,.find-card .backface{width:100%;height:100%;border:3px solid #fff;border-radius:12px;-webkit-backface-visibility:hidden}
+.find-card .face{transform:rotateY(0deg)}
+.find-card{flex:0 1 148px;width:148px;min-width:44px;max-height:none}
+.find-row{align-items:center;max-height:none}
+.dad{flex:1 1 100%;border-radius:14px;padding:8px 12px;flex-wrap:wrap;justify-content:center}
+.dad strong{flex:1 1 100%;text-align:center;font-size:15px}
+.dad button{min-height:44px;border:2px solid transparent}
+.dad button:disabled{opacity:.45;cursor:default}
+#not-yet{background:#fff0db}
+.response-label{display:flex;flex-direction:column;gap:5px;background:#fff8df;border-radius:10px;padding:8px;max-width:100%;font-size:14px}
+.response-label input{font:inherit;padding:8px;border:2px solid #a7aec1;border-radius:7px;width:100%;min-width:250px}
+.strategy-label{display:block;font-size:14px;padding:5px;min-height:42px}
+.strat:disabled{opacity:.6;cursor:default}
+.strats{position:relative;z-index:10;flex-wrap:wrap;justify-content:center}
+.strat{width:clamp(100px,13vw,145px)}
+.strat img{pointer-events:none;max-height:150px;object-fit:contain}
+.lesson{max-width:760px;line-height:1.4}
+.lesson .nav-btn{margin:6px}
+body[data-screen="r3"] #stage{margin-right:8px;overflow:auto;align-items:flex-start}
+body[data-screen="r3"] .booth,body[data-screen="r3"] .pup{opacity:.18}
+body[data-screen="r3"] .playfield{grid-template-columns:minmax(0,1fr) minmax(180px,260px);align-items:start;padding:12px}
+body[data-screen="r2"] .rowish{flex-wrap:wrap}
+body[data-screen="r2"] .pic-only{width:150px}
+.talk{pointer-events:none}
+body[data-screen="r1"] .talk{left:auto;bottom:auto;right:2%;top:35%;max-width:21%;font-size:16px}
+body[data-screen="r3"] .talk{display:none}
+.mystery img{width:min(33vw,330px)}
+.slot img{aspect-ratio:360/220}
+.album-grid{grid-template-columns:repeat(3,1fr)}
+body[data-screen="home"] #stage{overflow:auto}
+@media(max-width:700px){.title{min-width:150px}.ticket-pill{font-size:14px}.dad button{font-size:12px}.strat{width:95px}body[data-screen="r3"] .playfield{display:block}.play-side{margin-top:12px}.album-grid{grid-template-columns:repeat(2,1fr)}.find-row{gap:4px}.response-label input{min-width:180px}}
+
 </style>
 </head>
 <body>
@@ -193,12 +240,14 @@ body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
   <header class="hud">
     <button type="button" class="grown-btn" id="grown">Grown-ups</button>
     <div class="title" id="title">All Aboard!</div>
+    <button type="button" class="nav-btn" id="pause-game" hidden>Save &amp; home</button>
     <div class="ticket-pill" id="tickets" aria-live="polite"></div>
     <div class="dad" id="dad" hidden>
-      <span>Dad</span>
-      <button type="button" id="own">Got it on his own</button>
-      <button type="button" id="with">Got it with help</button>
-      <label><input type="checkbox" id="split"> needed the sound split off</label>
+      <strong id="dad-prompt">Dad: choose one result after each turn.</strong>
+      <button type="button" id="own">On his own</button>
+      <button type="button" id="with">With help</button>
+      <button type="button" id="split">Needed sounds separated</button>
+      <button type="button" id="not-yet">Not yet</button>
       <button type="button" id="tips">Tips</button>
     </div>
     <label class="word-set" id="word-set" hidden>Word <input id="word-box" type="text" maxlength="40" aria-label="Word for Round 3"></label>
@@ -210,5 +259,6 @@ body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
 <script src="words.js"></script>
 <script src="collect.js"></script>
 <script src="game.js"></script>
-</body>
+<div class="brand">Whiz Kids Therapy · Review 3.1 · Saves on this device</div></body>
 </html>
+

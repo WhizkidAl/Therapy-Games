@@ -108,7 +108,14 @@
             ['Where is it?', 'on the card']
           ])
         ]
-      }
+      },
+      { id: 'oke', rhyme: 'oak', face: '_oke', phoneticRime: 'əʉk',
+        words: [
+          word('boke','b','meet Boke','I can see Boke.',[['What is it?','Boke, a robot'],['What does it look like?','orange with a letter B'],['What does it do?','it waves']]),
+          word('folk','f','friendly folk','I can see the folk.',[['What is it?','a group of people'],['Who are they?','a family'],['What are they doing?','standing together']]),
+          word('spoke','sp','he spoke','He spoke to me.',[['What happened?','he talked'],['What did he use?','his voice'],['Who did it?','the child']]),
+          word('smoke','sm','grey smoke','I can see grey smoke.',[['What is it?','smoke'],['What does it look like?','grey puffs'],['Where does it go?','up in the air']])
+        ] }
     ]
   };
 });

@@ -5,11 +5,11 @@
   const collect = window.AboardCollect;
   const $ = (id) => document.getElementById(id);
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const KEY = 'all-aboard-v2';
+  const KEY = 'wk-games-all-aboard-v3-review';
   const sheets = ['grown', 'tickets', 'rate', 'award', 'album', 'progress', 'how'];
   let store = load();
-  let set = words.sets[0];
-  let level = 'word';
+  let set = words.sets.find(item => item.id === store.setId) || words.sets[0];
+  let level = words.levels.some(item => item.id === store.level) ? store.level : 'word';
   let screen = 'home';
   let roundNo = 1;
   let phase = 'pick';
@@ -21,6 +21,9 @@
   let tiles = [];
   let strategy = null;
   let splitOff = false;
+  let responseNote = '';
+  let introOpen = false;
+  let storageOK = true;
   let usedHelp = false;
   let sessionTickets = 0;
   let roundCounts = { 1: 0, 2: 0, 3: 0 };
@@ -32,8 +35,8 @@
   let returnTo = 'home';
   let table = [];
   let hunt = null;
-  let turn = 'daniel';
-  let hands = { daniel: [], dad: [] };
+  let turn = 'child';
+  let hands = { child: [], dad: [] };
   let findStep = 'play';
   let openUid = null;
   let findTimer = 0;
@@ -42,7 +45,7 @@
 
   function load() {
     let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (error) { saved = null; }
+    try { saved = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem('all-aboard-v2') || 'null'); } catch (error) { saved = null; }
     if (!saved || typeof saved.tickets !== 'number' || !Array.isArray(saved.attempts)) {
       saved = { tickets: 0, shopOptIn: false, attempts: [], ratings: [] };
     }
@@ -73,7 +76,7 @@
     return saved;
   }
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (error) { /* private mode */ }
+    try { localStorage.setItem(KEY, JSON.stringify(store)); storageOK = true; } catch (error) { storageOK = false; }
   }
   function shuffle(list) {
     const copy = list.slice();
@@ -98,6 +101,7 @@
     return node;
   }
   function showName(id) {
+    if (id === 'boke') return 'Boke';
     if (id === 'smill') return 'Smill';
     if (id === 'smin') return 'Smin';
     return id;
@@ -164,7 +168,7 @@
     save();
   }
   function howText(support) {
-    return support === 'help' ? 'with support' : 'on his own';
+    return ({ independent: 'on his own', help: 'with help', separated: 'needed sounds separated', not_yet: 'not yet' })[support] || 'not recorded';
   }
   function strategyName(id) {
     if (id === 'key') return 'Say the key word';
@@ -176,7 +180,7 @@
     const date = new Date(iso);
     const day = (date.getDay() + 6) % 7;
     const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate() - day);
-    return monday.toISOString().slice(0, 10);
+    return monday.getFullYear() + '-' + String(monday.getMonth()+1).padStart(2,'0') + '-' + String(monday.getDate()).padStart(2,'0');
   }
   function weekLabel(key) {
     const date = new Date(key + 'T00:00:00');
@@ -230,8 +234,8 @@
       gone: false,
       n: index + 1
     }));
-    hands = { daniel: [], dad: [] };
-    turn = 'daniel';
+    hands = { child: [], dad: [] };
+    turn = 'child';
     openUid = null;
     hunt = null;
     current = null;
@@ -242,22 +246,23 @@
     carriages = [];
     say([{ text: 'Look at the cards!', who: 'pig' }]);
     render();
-    findTimer = setTimeout(() => {
-      if (screen !== 'r1' || findStep !== 'deal') return;
-      dealing = false;
-      table.forEach((card) => { card.down = true; });
-      nextHunt(true);
-    }, reduce ? 300 : 1600);
   }
+  function hideDeal() {
+    if (screen !== 'r1' || findStep !== 'deal') return;
+    dealing = false;
+    table.forEach(card => { card.down = true; });
+    nextHunt(true);
+  }
+
   function nextHunt(first) {
     const left = table.filter((card) => !card.gone);
     if (!left.length) {
       findStep = 'over';
-      const daniel = hands.daniel.length;
+      const child = hands.child.length;
       const dad = hands.dad.length;
       let text = 'A draw! You both did so well.';
-      if (daniel > dad) text = 'Daniel wins! You both did so well.';
-      if (dad > daniel) text = 'Dad wins! You both did so well.';
+      if (child > dad) text = 'Player 1 wins! You both did so well.';
+      if (dad > child) text = 'Dad wins! You both did so well.';
       say([{ text: text, who: 'pig' }]);
       render();
       return;
@@ -266,20 +271,20 @@
     findStep = 'play';
     openUid = null;
     current = null;
-    const whoLine = turn === 'daniel' ? "Daniel's go!" : "Dad's go!";
+    const whoLine = turn === 'child' ? "Player 1's go!" : "Dad's go!";
     say([
-      { text: first ? "Daniel's go!" : whoLine, who: turn === 'daniel' ? 'pig' : 'pup' },
+      { text: first ? "Player 1's go!" : whoLine, who: turn === 'child' ? 'pig' : 'pup' },
       { text: 'Find ' + showName(hunt.id) + '!', who: 'pup' }
     ]);
     render();
   }
   function passTurn() {
-    turn = turn === 'daniel' ? 'dad' : 'daniel';
+    turn = turn === 'child' ? 'dad' : 'child';
     findStep = 'play';
     openUid = null;
     say([
-      { text: turn === 'daniel' ? "Daniel's go!" : "Dad's go!", who: turn === 'daniel' ? 'pig' : 'pup' },
-      { text: 'Turn over a card.', who: 'pup' }
+      { text: turn === 'child' ? "Player 1's go!" : "Dad's go!", who: turn === 'child' ? 'pig' : 'pup' },
+      { text: 'Find ' + showName(hunt.id) + '!', who: 'pup' }
     ]);
     render();
   }
@@ -288,7 +293,7 @@
     const card = table.find((item) => item.uid === uid);
     if (!card || card.gone) return;
     if (findStep === 'miss') {
-      if (card.uid !== openUid) return;
+      if (card.uid !== openUid || turn === 'child') return;
       card.down = true;
       passTurn();
       return;
@@ -296,43 +301,41 @@
     if (findStep !== 'play') return;
     card.down = false;
     openUid = card.uid;
+    if (session && turn === 'child') {
+      if (!session.listening) session.listening = [];
+      session.listening.push({target:hunt.id,selected:card.item.id,correct:card.item.id===hunt.id,at:new Date().toISOString()});
+      persistSession();
+    }
     if (hunt && card.item.id === hunt.id) {
       findStep = 'mark';
       current = card.item;
-      say([{ text: 'Yay! You got it!', who: 'pig' }]);
+      say([{ text: turn === 'child' ? 'You found it! Now say the whole word: ' + showName(current.id) + '.' : 'You found it!', who: 'pig' }]);
       render();
       return;
     }
     findStep = 'miss';
+    current = card.item;
     say([{ text: 'Uh oh! What word is it?', who: 'pup' }]);
     render();
   }
 
   function drawTrain() {
-    const box = $('train');
-    box.replaceChildren();
-    const cars = h('div', { class: 'cars' });
-    const groups = [[], [], [], []];
-    const live = screen === 'r1' || screen === 'r2' || screen === 'r3' || screen === 'yay';
-    if (live && roundNo === 1 && (hands.daniel.length || hands.dad.length)) {
-      hands.daniel.forEach((id, index) => groups[index % 2].push(id));
-      hands.dad.forEach((id, index) => groups[2 + (index % 2)].push(id));
-    } else if (live) {
-      carriages.forEach((id, index) => { if (index < 4) groups[index].push(id); });
-    }
-    for (let i = 0; i < 4; i += 1) {
-      const wrap = h('div', { style: 'position:relative' });
-      wrap.append(h('img', { class: 'carriage', src: 'assets/carriage.webp', alt: '' }));
-      wrap.append(h('span', { class: 'stand-aim' }));
-      groups[i].forEach((id, index) => {
-        const img = h('img', { class: 'stood', src: 'assets/cv_card_' + id + '.webp', alt: showName(id) });
-        img.style.left = (16 + index * 20) + '%';
-        wrap.append(img);
-      });
+    const box = $('train'); box.replaceChildren();
+    const cars = h('div', {class:'cars'});
+    const live = ['r1','r2','r3','yay'].includes(screen);
+    const held = live && roundNo===1 ? hands.child.map(id=>({id,owner:'Player 1'})).concat(hands.dad.map(id=>({id,owner:'Grown-up'}))) : live ? carriages.map(id=>({id,owner:''})) : [];
+    const count = Math.max(4,held.length);
+    for(let i=0;i<count;i++) {
+      const wrap=h('div',{class:'car-unit'});
+      wrap.append(h('img',{class:'carriage',src:'assets/carriage.webp',alt:''}));
+      wrap.append(h('span',{class:'stand-aim'}));
+      if(held[i]) {
+        wrap.append(h('img',{class:'stood',src:'assets/cv_card_'+held[i].id+'.webp',alt:showName(held[i].id)}));
+        if(held[i].owner) wrap.append(h('span',{class:'car-owner',text:held[i].owner}));
+      }
       cars.append(wrap);
     }
-    box.append(cars);
-    box.append(h('img', { class: 'engine', src: 'assets/engine.webp', alt: '' }));
+    box.append(cars); box.append(h('img',{class:'engine',src:'assets/engine.webp',alt:''}));
   }
 
   function ticketPill() {
@@ -340,13 +343,16 @@
     pill.replaceChildren();
     pill.append(h('img', { src: 'assets/ticket.webp', alt: '' }));
     const total = (screen === 'home' || screen === 'grown' || screen === 'album' || screen === 'progress' || screen === 'how') ? store.tickets : sessionTickets;
-    pill.append(h('span', { text: '× ' + total }));
+    pill.append(h('span', { text: store.tickets + ' tickets collected' }));
   }
 
   function setDad(on) {
-    $('dad').hidden = !on;
+    $('dad').hidden = !on || (roundNo === 1 && turn === 'dad');
     $('grown').hidden = on || screen === 'award';
-    $('split').checked = splitOff;
+    const ready = (screen === 'r1' && ['mark','miss'].includes(findStep)) || (screen === 'r2' && ['say','help'].includes(phase)) || (screen === 'r3' && !!strategy && !introOpen);
+    ['own','with','split','not-yet'].forEach(id => { $(id).disabled = !ready; });
+    $('tips').disabled = !ready;
+    $('dad-prompt').textContent = ready ? (roundNo === 3 ? 'Dad: how did this strategy go? Choose one to save.' : 'Dad: how did the whole word go? Choose one to save.') : 'Dad: wait for the word or strategy, then choose one.';
     $('word-set').hidden = !(screen === 'r3' || screen === 'grown');
     const box = $('word-box');
     if (document.activeElement !== box) box.value = practiceText();
@@ -357,8 +363,10 @@
       round: roundNo,
       word: roundNo === 3 ? practiceText() : current.id,
       level: level,
-      support: usedHelp ? 'help' : support,
-      splitOff: $('split').checked,
+      support: support,
+      splitOff: support === 'separated',
+      tipsOpened: usedHelp,
+      response: roundNo === 3 ? responseNote.trim() : '',
       strategy: roundNo === 3 ? strategy : '',
       at: new Date().toISOString()
     };
@@ -400,6 +408,7 @@
     yayWord = null;
     usedHelp = false;
     strategy = null;
+    responseNote = '';
     splitOff = false;
     if (roundNo === 1) {
       if (slots <= 0) return finishThisRound();
@@ -413,6 +422,7 @@
       phase = 'pick';
       tiles = shuffle(words.tilePool);
       screen = 'r2';
+      promptFirstSound();
     } else if (doneStrats.key && doneStrats.show && doneStrats.way) {
       return finishThisRound();
     } else {
@@ -424,6 +434,8 @@
   }
 
   function score(support) {
+    if (roundNo === 2 && !['say','help'].includes(phase)) return;
+    if (roundNo === 3 && introOpen) return;
     if (!current || screen === 'yay' || screen === 'award') return;
     if (roundNo === 3 && !strategy) {
       $('live').textContent = 'Pick a strategy card first.';
@@ -431,8 +443,15 @@
     }
     if (roundNo === 3 && doneStrats[strategy]) return;
     if (roundNo === 1) {
+      if (findStep === 'miss') {
+        if (turn === 'child') record(support);
+        const missed = table.find(item => item.uid === openUid);
+        if (missed) missed.down = true;
+        current = null; usedHelp = false; splitOff = false; phase = 'pick';
+        passTurn(); return;
+      }
       if (findStep !== 'mark') return;
-      record(support);
+      if (turn === 'child') record(support);
       const found = table.find((item) => item.uid === openUid);
       if (found) {
         found.gone = true;
@@ -440,15 +459,15 @@
       }
       const pictured = current.id;
       const who = turn;
-      const index = (who === 'daniel' ? 0 : 2) + ((hands[who].length - 1) % 2);
+      const index = (who === 'child' ? 0 : 2) + ((hands[who].length - 1) % 2);
       yayWord = current;
       fly = { id: pictured, index: index };
       screen = 'yay';
       phase = 'yay';
       render();
       armFly(() => {
-        fly = null;
-        turn = who === 'daniel' ? 'dad' : 'daniel';
+        fly = null; usedHelp = false; splitOff = false; strategy = null;
+        turn = who === 'child' ? 'dad' : 'child';
         screen = 'r1';
         phase = 'pick';
         nextHunt(false);
@@ -479,14 +498,17 @@
   }
 
   function takeTicket(kind) {
+    if(screen !== 'award') return;
     const item = nextItem(kind);
     if (item) {
       store.collection[kind].push(item.id);
-      store.tickets += 1;
-      sessionTickets += 1;
+      
       if (session) session.awards.push({ kind: kind, id: item.id, label: item.label });
       persistSession();
     }
+    store.tickets += 1; sessionTickets += 1;
+    if (!item && session) session.awards.push({kind:kind,id:'bonus',label:'Bonus ticket'});
+    persistSession();
     const list = selectedRounds();
     const index = list.indexOf(roundNo);
     if (index >= 0 && index < list.length - 1) startRound(list[index + 1]);
@@ -515,12 +537,17 @@
       current = round3Item();
       screen = 'r3';
     }
-    if (number === 2) say([{ text: 'Round 2. Which sound comes first?', who: 'pup' }]);
-    if (number === 3) say([{ text: 'Round 3. Pick a way, then say it.', who: 'pup' }]);
+    if (number === 2) promptFirstSound();
+    if (number === 3) { responseNote = ''; introOpen = !store.repairIntroSeen; say([{ text: 'Round 3. Choose a way to help me understand.', who: 'pup' }]); }
     render();
   }
 
+  function promptFirstSound() {
+    say([{ text: showName(current.id) + '. Which sound comes first in ' + showName(current.id) + '?', who: 'pup' }]);
+  }
+
   function startPractice() {
+    store.resume = null;
     if (!selectedRounds().length) store.roundsOn[1] = true;
     sessionTickets = 0;
     roundCounts = { 1: 0, 2: 0, 3: 0 };
@@ -531,6 +558,8 @@
       setId: set.id,
       rounds: selectedRounds().slice(),
       rating: '',
+      status: 'in-progress',
+      listening: [],
       awards: [],
       attempts: [],
       animals: store.collection.animals.length,
@@ -567,20 +596,23 @@
     render();
   }
   function cueText() {
+    if (screen === 'r2' && phase === 'say') return 'Now say the whole word: ' + showName(current.id);
+    if (screen === 'r3') return strategy === 'show' ? 'Show it, point or act it out.' : strategy === 'way' ? 'Use another word or tell me about it.' : strategy === 'key' ? 'Say the important word: ' + practiceText() : 'Choose a way to help me understand.';
     if (phase === 'say' && current) return line(current);
     if (phase === 'onset') return 'Now pick a sound!';
-    if (screen === 'r2') return 'Which sound comes first?';
+    if (screen === 'r2') return showName(current.id) + ': which sound comes first?';
     if (screen === 'r3') return strategy ? strategyName(strategy) : 'Pick a way, then say it.';
     return 'Pick a card, then pick a sound!';
   }
   function sayBubble() {
     const box = h('div', { class: 'say' });
     box.append(h('div', { class: 'bubble', text: cueText() }));
-    if (screen !== 'r3' || strategy) box.append(h('div', { class: 'mouth', text: strategy === 'show' ? 'then show it!' : 'then say it!' }));
+    if (screen !== 'r3' && phase === 'say') box.append(h('div', { class: 'mouth', text: strategy === 'show' ? 'then show it!' : 'then say it!' }));
     return box;
   }
   function hintPanel() {
-    const parts = [current.onset, set.rhyme];
+    const family = words.sets.find(group => group.words.some(item => item.id === current.id)) || set;
+    const parts = [current.onset, family.rhyme];
     const box = h('div', { class: 'hint' });
     box.append(h('h3', { text: 'Dad tips. No rush!' }));
     box.append(h('div', { text: 'Model it:' }));
@@ -592,26 +624,27 @@
     row.append(h('span', { class: 'chip dark', text: parts[1] }));
     box.append(row);
     box.append(h('p', { text: 'Then he has another go and keeps the card.' }));
-    box.append(h('button', { type: 'button', class: 'help-btn', text: 'Keep the card', on: () => score('help') }));
+    box.append(h('p',{text:'Dad: choose one result in the bar above to save this turn.'}));
     return box;
   }
   function cluePanel() {
     const box = h('div', { class: 'hint' });
     box.append(h('h3', { text: 'Dad tips: another way' }));
+    box.append(h('p',{text:'A synonym is another word with a similar meaning, like spoke / talked. If there is no easy synonym, give a clue: the group it belongs to, what it does, where it is, or what it looks like.'}));
     const grid = h('div', { class: 'q' });
     (current.clues || []).forEach((pair) => {
       grid.append(h('b', { text: pair[0] }));
       grid.append(h('span', { text: pair[1] }));
     });
     box.append(grid);
-    box.append(h('button', { type: 'button', class: 'help-btn', text: 'Keep the card', on: () => score('help') }));
+    box.append(h('p',{text:'Dad: choose one result in the bar above to save this turn.'}));
     return box;
   }
   function gesturePanel() {
     const box = h('div', { class: 'hint' });
     box.append(h('h3', { text: 'Show or point' }));
-    box.append(h('p', { text: 'This one is a gesture. He can point to the picture or show what it is. When he does, tap Got it.' }));
-    box.append(h('button', { type: 'button', class: 'got', text: 'Got it', on: () => score('independent') }));
+    box.append(h('p', { text: 'This one is a gesture. He can point to the picture or show what it is. Dad records how it went using the choices above.' }));
+    box.append(h('p',{text:'Dad: choose one result in the bar above.'}));
     return box;
   }
 
@@ -619,28 +652,31 @@
     const stage = h('div', { class: 'find-board' });
     if (findStep === 'over') {
       const box = h('div', { class: 'over' });
-      const daniel = hands.daniel.length;
+      const child = hands.child.length;
       const dad = hands.dad.length;
       let title = 'A draw!';
-      if (daniel > dad) title = 'Daniel wins!';
-      if (dad > daniel) title = 'Dad wins!';
+      if (child > dad) title = 'Player 1 wins!';
+      if (dad > child) title = 'Dad wins!';
       box.append(h('h2', { text: title }));
       box.append(h('p', { text: 'You both did so well.' }));
-      box.append(h('p', { text: 'Daniel ' + daniel + '    Dad ' + dad }));
+      box.append(h('p', { text: 'Player 1 ' + child + '    Dad ' + dad }));
       box.append(h('button', { type: 'button', class: 'play-btn slim', text: 'Tickets', on: finishThisRound }));
       stage.append(box);
       return stage;
     }
     const turns = h('div', { class: 'turns' });
-    [['daniel', 'Daniel\'s go', 'assets/pig.webp'], ['dad', 'Dad\'s go', 'assets/pup.webp']].forEach((item) => {
+    [['child', 'Player 1\'s go', 'assets/pig.webp'], ['dad', 'Dad\'s go', 'assets/pup.webp']].forEach((item) => {
       const pill = h('div', { class: 'turn' + (turn === item[0] ? ' on' : '') });
       pill.append(h('img', { src: item[2], alt: '' }));
       pill.append(h('span', { text: item[1] }));
       turns.append(pill);
     });
     stage.append(turns);
-    if (hunt && findStep !== 'deal') stage.append(h('div', { class: 'ask', text: 'Find ' + showName(hunt.id) + '!' }));
-    if (findStep === 'deal') stage.append(h('div', { class: 'note', text: 'Watch where each card lands.' }));
+
+    if (findStep === 'deal') {
+      stage.append(h('div', { class: 'count-pill', text: 'Look at every picture. Remember where it is.' }));
+      stage.append(h('button', {type:'button',class:'nav-btn',id:'ready-cards',text:'Ready - turn the cards over',on:hideDeal}));
+    }
     const row = h('div', { class: 'find-row' });
     table.forEach((card, index) => {
       if (card.gone) {
@@ -667,8 +703,9 @@
       row.append(button);
     });
     stage.append(row);
-    if (findStep === 'miss') stage.append(h('p', { class: 'count-pill', text: 'Say the word, then tap the card.' }));
-    if (findStep === 'mark') stage.append(h('p', { class: 'note', text: 'Dad, mark how that go went.' }));
+    if (findStep === 'miss') stage.append(h('p', { class: 'count-pill', text: turn === 'child' ? 'Say this word. Grown-up, mark how it went.' : 'Name this word, then tap the card.' }));
+    if (findStep === 'mark' && turn === 'child') stage.append(h('p', { class: 'count-pill', text: 'Say the whole word. Dad, choose how it went above.' }));
+    if (findStep === 'mark' && turn === 'dad') stage.append(h('button', {type:'button',class:'nav-btn',text:'Keep this card',on:()=>score('independent')}));
     if (phase === 'help' && current) stage.append(hintPanel());
     return stage;
   }
@@ -680,6 +717,7 @@
     pic.append(h('img', { src: 'assets/cv_pic_' + current.id + '.webp', alt: '' }));
     pic.append(h('div', { class: 'caption', text: '?' }));
     main.append(pic);
+    main.append(h('button',{type:'button',class:'nav-btn',text:'Hear the word',on:()=>{say([{text:showName(current.id),who:'pup'}]);showTalk();}}));
     const grid = h('div', { class: 'tiles' });
     tiles.forEach((tile) => {
       grid.append(h('button', {
@@ -710,10 +748,12 @@
       return;
     }
     phase = 'say';
+    say([{ text: 'Now say the whole word: ' + showName(current.id) + '.', who: 'pup' }]);
     render();
   }
 
   function renderRound3() {
+    if (introOpen) return repairLesson();
     const stage = h('div', { class: 'playfield' + (phase === 'help' ? ' wide' : '') });
     const main = h('div', { class: 'play-main' });
     const band = h('div', { class: 'play-main rowish fit' });
@@ -727,21 +767,30 @@
         type: 'button',
         class: 'strat ' + item[0] + (strategy === item[0] ? ' on' : '') + (doneStrats[item[0]] ? ' done' : ''),
         'aria-label': item[1],
+        disabled: doneStrats[item[0]],
         on: () => {
           if (doneStrats[item[0]]) return;
           strategy = item[0];
+          responseNote = '';
           phase = 'say';
           render();
         }
       });
       button.append(h('img', { src: item[2], alt: '' }));
+      button.append(h('span',{class:'strategy-label',text:item[1]}));
       if (item[0] === 'show') button.append(h('img', { class: 'pip', src: 'assets/cv_pic_' + current.id + '.webp', alt: '' }));
       if (doneStrats[item[0]]) button.append(h('span', { class: 'tick', text: '✓' }));
       strats.append(button);
     });
     band.append(strats);
     main.append(band);
-    if (strategy === 'show' && phase !== 'help') main.append(h('button', { type: 'button', class: 'got', text: 'Got it', on: () => score('independent') }));
+    main.append(h('p',{class:'count-pill',text:'A tick means this strategy has been practised.'}));
+    if (strategy) {
+      const label=h('label',{class:'response-label',text:strategy==='way'?'Dad: what other words did he use? (optional)':strategy==='show'?'Dad: what did he show or do? (optional)':'Dad: what key word did he say? (optional)'});
+      const input=h('input',{id:'response-note',type:'text',maxlength:200,value:responseNote,'aria-label':'What he said or did'});
+      input.addEventListener('input',()=>{responseNote=input.value;checkpoint();});label.append(input);main.append(label);
+    }
+    main.append(h('button',{type:'button',class:'nav-btn',text:'Learn with Station Pup',on:()=>{introOpen=true;render();}}));
     stage.append(main);
     const side = h('div', { class: 'play-side' });
     if (phase === 'help') side.append(strategy === 'way' ? cluePanel() : strategy === 'show' ? gesturePanel() : hintPanel());
@@ -750,9 +799,47 @@
     return stage;
   }
 
+
+  function repairLesson() {
+    const panel=h('div',{class:'panel lesson'});
+    panel.append(h('h2',{text:'Station Pup: help me understand'}));
+    const intro='If I do not understand, choose a way to help me. Say the key word. Or show me: point to the picture, or use your hands to act it out. Or say it another way. You can use a word with a similar meaning, like talked for spoke. Or tell me what it does, where it is, or what it looks like. Dad can give a model and help you choose.';
+    panel.append(h('p',{text:intro}));
+    const rows=[['Say the key word','Choose the important word and say it.'],['Show or point','Point to the object or picture, or act out what it does.'],['Say it another way','Use a synonym, or describe its group, action, place, appearance or parts.']];
+    rows.forEach(([title,text])=>{panel.append(h('h3',{text:title}));panel.append(h('p',{text:text}));});
+    panel.append(h('p',{text:'Example: bell → something that rings. Spoke → talked. A useful description counts; it does not have to be a single synonym.'}));
+    panel.append(h('button',{type:'button',class:'nav-btn',text:'Listen to Station Pup',on:()=>{say([{text:intro,who:'pup'}]);showTalk();}}));
+    panel.append(h('button',{type:'button',class:'nav-btn',text:'Skip / start practice',on:()=>{introOpen=false;store.repairIntroSeen=true;save();if(window.speechSynthesis)window.speechSynthesis.cancel();talk={text:''};render();}}));
+    return panel;
+  }
+  function checkpoint() {
+    if(!session || !['r1','r2','r3','yay','award','rate'].includes(screen)) return;
+    store.resume={sessionId:session.id,setId:set.id,level,screen,roundNo,phase,slots,used,current,queue,step,tiles,strategy,responseNote,introOpen,usedHelp,sessionTickets,roundCounts,carriages,yayWord,doneStrats,table,hunt,turn,hands,findStep,openUid,talk};
+    save();
+  }
+  function resumePractice() {
+    const r=store.resume;if(!r)return;
+    session=store.sessions.find(s=>s.id===r.sessionId);if(!session){store.resume=null;save();render();return;}
+    set=words.sets.find(s=>s.id===r.setId)||words.sets[0];
+    store.roundsOn = {1:session.rounds.includes(1),2:session.rounds.includes(2),3:session.rounds.includes(3)};
+    ({level,screen,roundNo,phase,slots,used,current,queue,step,tiles,strategy,responseNote,introOpen,usedHelp,sessionTickets,roundCounts,carriages,yayWord,doneStrats,table,hunt,turn,hands,findStep,openUid,talk}=r);
+    dealing=false;
+    if(screen==='yay') {
+      if(roundNo===1){turn=turn==='child'?'dad':'child';screen='r1';phase='pick';nextHunt(false);}
+      else {if(yayWord)placeCard(yayWord.id);afterCard();}
+      return;
+    }
+    render();
+  }
+
   function renderHome() {
     const wrap = h('div', { class: 'play-main' });
-    wrap.append(h('button', { type: 'button', class: 'play-btn', id: 'play', text: '▶  Play', on: startPractice }));
+    if(store.resume) wrap.append(h('button',{type:'button',class:'play-btn',id:'resume',text:'Continue Round '+store.resume.roundNo,on:resumePractice}));
+    wrap.append(h('button', { type: 'button', class: 'play-btn', id: 'play', text: store.resume ? 'Start a new game' : '▶  Play', on: startPractice }));
+    wrap.append(h('button',{type:'button',class:'nav-btn',text:'Dad: progress',on:()=>openSheet('progress')}));
+    const last=store.sessions.at(-1);
+    if(last) wrap.append(h('p',{class:'count-pill',text:'Last practice: '+whenLabel(last.at)+' · '+last.attempts.length+' recorded turns · '+(last.status==='completed'?'finished':'in progress')}));
+    wrap.append(h('p',{class:'note',text:storageOK?'Progress and tickets stay in this browser on this device.':'Saving is unavailable in this browser. Export progress before closing.'}));
     wrap.append(h('p', { class: 'count-pill', text: countLine() }));
     const today = selectedRounds().map((n) => 'Round ' + n).join(', ');
     wrap.append(h('p', { class: 'note', text: 'Today: ' + (today || 'choose a round') }));
@@ -800,6 +887,10 @@
           const next = !store.findOn[item.id];
           const onCount = words.sets.filter((group) => store.findOn[group.id]).length;
           if (!next && onCount === 1) return;
+          if (next) {
+            const active = words.sets.filter(group => store.findOn[group.id]);
+            while (active.length >= store.findCount) store.findOn[active.shift().id] = false;
+          }
           store.findOn[item.id] = next;
           const now = words.sets.filter((group) => store.findOn[group.id]).length;
           if (now < 2) store.findCount = 1;
@@ -824,6 +915,7 @@
             }
           }
           store.findCount = count;
+          if (count === 1) { const active=words.sets.filter(group=>store.findOn[group.id]); active.slice(1).forEach(group=>store.findOn[group.id]=false); }
           save();
           render();
         }
@@ -857,7 +949,7 @@
     const levels = h('div', { class: 'levels' });
     const sample = set.words[0];
     words.levels.forEach((item) => {
-      const button = h('button', { type: 'button', class: 'level' + (level === item.id ? ' on' : ''), on: () => { level = item.id; render(); } });
+      const button = h('button', { type: 'button', class: 'level' + (level === item.id ? ' on' : ''), on: () => { level = item.id; store.level = level; save(); render(); } });
       button.append(h('b', { text: item.label }));
       button.append(h('img', { src: 'assets/cv_pic_' + sample.id + '.webp', alt: '' }));
       const frame = item.id === 'word' ? sample.text : item.id === 'phrase' ? sample.phrase : sample.sentence;
@@ -874,6 +966,7 @@
         class: 'train-pick' + (set.id === item.id ? ' on' : ''),
         on: () => {
           set = item;
+          store.setId = item.id;
           if (!store.practiceWord || words.sets.some((group) => group.words.some((word) => word.text === store.practiceWord))) store.practiceWord = '';
           save();
           render();
@@ -906,14 +999,14 @@
   function renderAward() {
     const panel = h('div', { class: 'panel tickets' });
     panel.append(h('h2', { text: 'A ticket for you!' }));
-    panel.append(h('p', { text: 'The engineer has one ticket. Pick a picture he does not have yet.' }));
+    panel.append(h('p', { text: 'You finished a round! Choose an animal or train ticket for your collection.' }));
     const row = h('div', { class: 'mystery' });
     [['animals', 'Animal ticket'], ['trains', 'Train ticket']].forEach((pair) => {
       const item = nextItem(pair[0]);
       const button = h('button', { type: 'button', 'aria-label': pair[1], on: () => takeTicket(pair[0]) });
       button.style.position = 'relative';
       button.append(h('img', { src: item ? 'assets/collect/' + (pair[0] === 'animals' ? 'animal-' : 'train-') + item.id + '.svg' : 'assets/ticket.webp', alt: '' }));
-      button.append(h('div', { class: 'caption', text: item ? item.label : 'All collected' }));
+      button.append(h('div', { class: 'caption', text: item ? item.label : 'Bonus ticket' }));
       row.append(button);
     });
     panel.append(row);
@@ -947,6 +1040,9 @@
     const panel = h('div', { class: 'panel how' });
     panel.append(h('h2', { text: 'Progress' }));
     panel.append(h('p', { class: 'note', text: 'Saved on this tablet. This is not sent anywhere until you export it.' }));
+    const totals={independent:0,help:0,separated:0,not_yet:0};store.attempts.forEach(a=>{if(a.support in totals)totals[a.support]++;});
+    panel.append(h('p',{class:'count-pill',text:Object.entries(totals).map(([key,n])=>howText(key)+': '+n).join(' · ')}));
+    panel.append(h('p',{text:'These are Dad’s reports of support and outcome, not an automatic speech-accuracy score. Listening choices are recorded separately.'}));
     const weeks = {};
     store.sessions.forEach((item) => {
       const key = weekKey(item.at);
@@ -960,12 +1056,14 @@
       block.append(h('h3', { text: weekLabel(key) }));
       weeks[key].slice().reverse().forEach((item) => {
         const card = h('div', { class: 'sess' });
+        if(item.listening?.length) card.append(h('div',{text:'Listening: '+item.listening.filter(a=>a.correct).length+' / '+item.listening.length+' correct selections'}));
         const rounds = (item.rounds || []).map((n) => 'Round ' + n).join(', ');
         card.append(h('div', { text: whenLabel(item.at) + ' · ' + (item.level || 'word') + ' · ' + rounds }));
         (item.attempts || []).forEach((attempt) => {
           const bits = ['Round ' + attempt.round, attempt.word, howText(attempt.support)];
           if (attempt.splitOff) bits.push('sound split off');
           if (attempt.strategy) bits.push(strategyName(attempt.strategy));
+          if (attempt.response) bits.push('Said / did: '+attempt.response);
           card.append(h('div', { text: bits.join(' · ') }));
         });
         card.append(h('div', { text: 'Rating: ' + (item.rating || 'not yet') + ' · ' + (item.animals || 0) + ' of 24 animals, ' + (item.trains || 0) + ' of 24 trains' }));
@@ -985,7 +1083,7 @@
     return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
   }
   function exportCsv() {
-    const rows = [['week', 'date', 'rounds', 'level', 'word', 'how', 'sound split off', 'strategy', 'rating', 'animals', 'trains']];
+    const rows = [['week', 'date', 'rounds', 'level', 'word', 'how', 'sound split off', 'strategy', 'rating', 'animals', 'trains', 'said or did']];
     store.sessions.forEach((item) => {
       const shared = [
         weekLabel(weekKey(item.at)),
@@ -1004,7 +1102,7 @@
           attempt ? howText(attempt.support) : '',
           attempt && attempt.splitOff ? 'yes' : '',
           attempt && attempt.strategy ? strategyName(attempt.strategy) : '',
-          shared[4], shared[5], shared[6]
+          shared[4], shared[5], shared[6], attempt ? (attempt.response || '') : ''
         ]);
       });
     });
@@ -1021,10 +1119,10 @@
     panel.append(h('h2', { text: 'How to play' }));
     [
       'Choose the rounds in Grown-ups. Round 1, Round 2 and Round 3 can be on together, or just the ones you want today.',
-      'Round 1 is find the card. The pictures are dealt face up and numbered, then they flip face down. The pup asks for one word, such as Find spell. Tap a card. That card flips. If it is the one, he keeps it and you mark on his own, with help, or sound split off. If it is not, he says the word he turned over, the card flips back, and it is the other go. You take turns. The one with the most cards wins, and you both did well. One family is 4 cards. Two families is 8 cards.',
-      'Sit beside him. When he says it by himself, tap Got it on his own. If you had to model it, tap Got it with help. Tick needed the sound split off when you broke the first sound away from the rest.',
+      'Round 1 is find the card. The pictures stay face up until you tap Ready - turn the cards over. The pup asks for one word, such as Find spell. Tap a card. That card flips. If it is the one, he keeps it and you mark on his own, with help, or sound split off. If it is not, he says the word he turned over, the card flips back, and it is the other go. You take turns. The one with the most cards wins, and you both did well. One family is 4 cards. Two families is 8 cards.',
+      'Sit beside him. When he says it by himself, tap Got it on his own. If you had to model it, tap Got it with help. Choose Needed sounds separated when you separated the first sound from the rest. Choose Not yet when it did not happen. Each choice saves and moves on.',
       'Tips shows a model, or another way to say the word. He still keeps that turn.',
-      'Round 3 has three cards: Say the key word, Show or point, and Say it another way. Type the word in the box and change it whenever you like. Show or point is a gesture. When he does it, tap Got it. The round is done when each card has a tick.',
+      'Round 3 has three cards: Say the key word, Show or point, and Say it another way. Type the word in the box and change it whenever you like. Show or point is a gesture. Record the gesture using Dad’s choices. You can add what he said or did in the note field. The round is done when each card has a tick.',
       'At the end of a round the engineer gives one ticket. He picks an animal ticket or a train ticket and gets a new picture. My collection shows every picture, and how many he has.',
       'Progress lists each week: the date, the rounds, the level, each word, and the smiley. It is saved on this tablet. Export downloads a file you can send to the therapist.'
     ].forEach((copy) => panel.append(h('p', { text: copy })));
@@ -1046,11 +1144,14 @@
         on: () => {
           if (session) {
             session.rating = item[1];
+            session.status = 'completed';
+            session.endedAt = new Date().toISOString();
             persistSession();
           }
           store.ratings.push({ rating: item[1], at: new Date().toISOString() });
           save();
           session = null;
+          store.resume = null; save();
           screen = 'home';
           render();
         }
@@ -1064,7 +1165,7 @@
 
   function renderYay() {
     const stack = h('div', { class: 'play-main' });
-    stack.append(h('div', { class: 'yay', text: 'Yay! You got it!' }));
+    stack.append(h('div', { class: 'yay', text: 'Thanks for practising!' }));
     if (yayWord) {
       const card = h('div', { class: 'float-card fly-card' });
       card.append(h('img', { src: 'assets/cv_card_' + yayWord.id + '.webp', alt: showName(yayWord.id) }));
@@ -1111,14 +1212,18 @@
     else if (screen === 'rate') stage.append(renderRate());
     showTalk();
     $('live').textContent = talk.text || $('title').textContent;
+    $('pause-game').hidden = !['r1','r2','r3','award','rate'].includes(screen);
+    checkpoint();
   }
 
   $('grown').addEventListener('click', () => { screen = screen === 'grown' ? 'home' : 'grown'; render(); });
   $('own').addEventListener('click', () => score('independent'));
   $('with').addEventListener('click', () => score('help'));
-  $('split').addEventListener('change', () => { splitOff = $('split').checked; });
+  $('split').addEventListener('click', () => score('separated'));
+  $('not-yet').addEventListener('click', () => score('not_yet'));
+  $('pause-game').addEventListener('click',()=>{checkpoint();screen='home';talk={text:''};render();});
   $('tips').addEventListener('click', () => {
-    if (screen === 'r1' && findStep !== 'mark') {
+    if (screen === 'r1' && findStep !== 'mark' && findStep !== 'miss') {
       $('live').textContent = 'Find the card first.';
       return;
     }
@@ -1153,8 +1258,8 @@
       gone: step === 'over',
       n: index + 1
     }));
-    hands = { daniel: ['bell'], dad: ['fell'] };
-    if (step === 'over') hands = { daniel: ['bell', 'smell', 'spell'], dad: ['fell'] };
+    hands = { child: ['bell'], dad: ['fell'] };
+    if (step === 'over') hands = { child: ['bell', 'smell', 'spell'], dad: ['fell'] };
     if (step === 'play' || step === 'deal') {
       const bell = table.find((card) => card.item.id === 'bell');
       const fell = table.find((card) => card.item.id === 'fell');
@@ -1162,7 +1267,7 @@
       if (fell) fell.gone = true;
     }
     hunt = byId('spell');
-    turn = 'daniel';
+    turn = 'child';
     openUid = null;
     dealing = false;
     findStep = step === 'over' ? 'over' : step;
@@ -1183,16 +1288,18 @@
       talk = { text: 'Yay! You got it!', who: 'pig', screen: 'r1' };
     } else if (step === 'deal') {
       talk = { text: 'Look at the cards!', who: 'pig', screen: 'r1' };
-      hands = { daniel: [], dad: [] };
+      hands = { child: [], dad: [] };
       table.forEach((card) => { card.gone = false; card.down = false; });
     } else if (step === 'over') {
-      talk = { text: 'Daniel wins! You both did so well.', who: 'pig', screen: 'r1' };
+      talk = { text: 'Player 1 wins! You both did so well.', who: 'pig', screen: 'r1' };
     } else {
       talk = { text: 'Find spell!', who: 'pup', screen: 'r1' };
     }
   }
 
   window.Aboard = {
+    exportData() { return JSON.parse(JSON.stringify(store)); },
+    version: '3.1.0-review',
     preview(name) {
       set = words.sets[0];
       level = 'word';
@@ -1253,7 +1360,7 @@
       if (name === 'yay') { screen = 'yay'; yayWord = null; roundNo = 1; carriages = ['bell', 'fell', 'spell']; }
       if (name === 'round2') { set = words.sets[1]; screen = 'r2'; phase = 'pick'; roundNo = 2; current = byId('bill'); tiles = words.tilePool.slice(); carriages = []; }
       if (name === 'round3') { set = words.sets[0]; screen = 'r3'; phase = 'say'; roundNo = 3; current = byId('spell'); strategy = 'show'; doneStrats = { key: true, show: false, way: false }; carriages = ['spell']; }
-      if (name === 'award') { screen = 'award'; roundNo = 1; hands = { daniel: [], dad: [] }; talk = { text: 'A ticket for you!', who: 'pig', screen: 'award' }; }
+      if (name === 'award') { screen = 'award'; roundNo = 1; hands = { child: [], dad: [] }; talk = { text: 'A ticket for you!', who: 'pig', screen: 'award' }; }
       if (name === 'album') { screen = 'album'; returnTo = 'home'; }
       if (name === 'progress') { screen = 'progress'; returnTo = 'grown'; }
       if (name === 'how') { screen = 'how'; returnTo = 'grown'; }
@@ -1262,3 +1369,4 @@
     }
   };
 })();
+
