@@ -34,7 +34,7 @@ Status: technically tested pilot; not a claim of clinical acceptance.
 - JavaScript syntax: passed.
 - Actual database, transaction rolled back: save/read, duplicate retry, stale revision conflict, raw-table denial, parent view/contribution, plan-edit restriction, unrelated-user read/write denial, access revocation and anonymous denial.
 - Headless Edge with simulated transport: forms, save/read-back/reload, failed-save draft retention, conflict retention and retry, export, HTML injection escaping, view-only controls, mobile width and cards.
-- Browser with **real Supabase**, fictional temporary accounts: sign-in, create workspace, save and reopen plan, parent read and review contribution, coordinator sees review, export, access removal and sign-out. Test accounts/records cleaned up after verification.
+- Browser with **real Supabase**, fictional temporary accounts: sign-in, create workspace, save and reopen plan, parent read and review contribution, coordinator sees review, export, access removal and sign-out. The same flow also passed at the published GitHub Pages URL. Test workspaces and temporary coordinator privileges were removed after verification. Two synthetic sign-in accounts remain with no workspace access because their account-deletion confirmation expired; account deletion is still pending.
 - Screen layout inspected at desktop and phone sizes.
 - Email-code request/delivery and a real user's code entry remain to be checked; synthetic sign-in used a temporary password without sending mail.
 - Clinical introduction and real-world usefulness remain to be reviewed by the child's speech pathologist and supporters.
