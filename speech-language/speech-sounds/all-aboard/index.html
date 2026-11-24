@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7ec8f0">
+<title>All Aboard!</title>
+<style>
+@font-face{font-family:Fredoka;src:url("assets/fredoka-600.woff2") format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:Fredoka;src:url("assets/fredoka-700.woff2") format("woff2");font-weight:700;font-display:swap}
+:root{--ink:#24315c;--red:#e23b3b;--green:#2f9e4f;--gold:#f6c445}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Fredoka,system-ui,sans-serif;color:var(--ink);overflow:hidden;background:#8fd4f5}
+button{font:inherit;cursor:pointer;touch-action:manipulation;border:0}
+button:focus-visible,a:focus-visible{outline:4px solid #0b57d0;outline-offset:3px}
+.world{position:relative;height:100dvh;overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr);padding-bottom:16vh;background:#8fd4f5}
+.backdrop{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;z-index:0;pointer-events:none}
+.booth{position:absolute;right:0;top:8vh;width:23%;z-index:3;pointer-events:none}
+.pup{position:absolute;right:2.6%;top:11vh;width:14.5%;z-index:6;pointer-events:none}
+.pig{position:absolute;left:0.2%;bottom:24vh;width:13.5%;z-index:4;pointer-events:none}
+.train{position:absolute;left:0;right:0;bottom:0;z-index:7;display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none;overflow:visible}
+.cars{display:flex;align-items:flex-end;flex:1;min-width:0}
+.cars > div{flex:1 1 0;min-width:0;position:relative}
+.carriage{width:100%;height:auto;display:block}
+.engine{width:29%;height:auto;flex:0 0 auto;margin-right:8px}
+.hud{position:relative;z-index:8;padding:8px 10px 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.title{flex:1 1 220px;min-width:220px;background:#e23b3b;color:#fff;border-radius:999px;text-align:center;font-size:clamp(18px,2.4vw,40px);padding:8px 16px;border:4px solid #fff;box-shadow:0 4px 0 #8f1828}
+.ticket-pill{flex:0 0 auto;display:flex;align-items:center;gap:6px;background:#fff;border-radius:16px;padding:4px 10px;border:3px solid var(--ink);font-weight:700;font-size:20px}
+.ticket-pill img{height:32px}
+.grown-btn{flex:0 0 auto;background:#2a3f73;color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;min-height:46px}
+.grown-btn[hidden]{display:none}
+.dad{flex:0 0 auto;display:flex;gap:6px;align-items:center;background:#2a3f73;color:#fff;border-radius:999px;padding:4px 6px 4px 10px}
+.dad[hidden]{display:none}
+.dad span{font-weight:700;padding:0 2px}
+.dad button{background:#fff;color:var(--ink);border-radius:999px;min-height:40px;padding:6px 10px;font-weight:700;font-size:15px}
+.dad button.go{background:#d9f5df}
+.dad label{display:flex;gap:6px;align-items:center;font-size:13px;line-height:1.15;max-width:118px}
+.dad input{width:20px;height:20px;flex:0 0 auto}
+#stage{position:relative;z-index:6;min-height:0;height:100%;margin:4px 26% 0 8px;display:flex;align-items:center;justify-content:center}
+.world.sheet{padding-bottom:12vh}
+.world.sheet #stage{margin:4px 2% 0 2%}
+body[data-screen="home"] #stage{margin-left:15%;margin-right:26%}
+body[data-screen="yay"] #stage{margin-left:16%;margin-right:24%}
+body[data-screen="tickets"] .world,body[data-screen="rate"] .world{padding-bottom:26vh}
+body[data-screen="tickets"] .world.sheet #stage,body[data-screen="rate"] .world.sheet #stage{margin:8px 18% 0 16%}
+body[data-phase="help"] .world #stage{margin-right:8px}
+body[data-phase="help"] .booth,body[data-phase="help"] .pup{visibility:hidden}
+.play-btn{background:#2f9e4f;color:#fff;font-size:clamp(34px,4.6vw,56px);border-radius:24px;padding:14px 48px;border:5px solid #fff;box-shadow:0 8px 0 #1c6b34;min-width:220px}
+.playfield{display:grid;grid-template-columns:minmax(0,1fr) minmax(148px,188px);gap:8px;width:100%;height:100%;align-items:center}
+.playfield.wide{grid-template-columns:minmax(0,1fr) minmax(260px,440px)}
+.play-main{min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.play-main.rowish{flex-direction:row;align-items:center}
+.play-side{min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;align-self:center;position:relative;z-index:7}
+.cards{display:flex;gap:10px;justify-content:center;flex-wrap:nowrap;width:100%;align-items:stretch}
+.back{flex:1 1 0;width:0;max-width:210px;min-width:0;aspect-ratio:3/4;background:#e23b3b;border:6px solid #f6c445;border-radius:16px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(20px,2.6vh,32px);font-weight:700;box-shadow:0 6px 0 #8f1828;position:relative;overflow:hidden}
+.back.face{background:#fff;border:8px solid #fff;color:var(--ink);box-shadow:0 10px 18px #24315c2e}
+.back.face img{width:100%}
+.back img{width:68%;height:auto}
+.back.on{outline:5px solid #0b57d0}
+.onsets{display:flex;gap:12px;justify-content:center}
+.onset{width:clamp(58px,9vh,76px);height:clamp(58px,9vh,76px);border-radius:50%;color:#fff;font-size:clamp(22px,3vh,30px);font-weight:700;border:4px solid #fff;position:relative}
+.onset.used{filter:grayscale(.4)}
+.onset.used:after{content:"✓";position:absolute;right:-4px;top:-6px;background:#fff;color:#1c6b34;border-radius:50%;width:22px;height:22px;font-size:14px;line-height:22px}
+.bubble{background:#fff;border-radius:18px;padding:10px 14px;font-weight:700;box-shadow:0 4px 0 #d5d8df;max-width:176px}
+.say{display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:100%}
+.mouth{background:#fff;border:3px solid #e23b3b;color:#e23b3b;border-radius:999px;padding:6px 12px;font-weight:700}
+.panel{background:#fffaf2;border:6px solid #e23b3b;border-radius:28px;padding:14px 16px;height:auto;max-height:100%;overflow:auto;width:100%}
+.panel h2{margin:0 0 8px;color:#e23b3b;font-size:clamp(26px,3vw,36px)}
+.levels,.trains{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.level,.train-pick{background:#fff;border:3px solid #d5d8df;border-radius:16px;padding:8px;text-align:center}
+.level.on{border-color:#f6c445;background:#fff8df}
+.level img{height:40px}
+.level b{display:block;font-size:22px}
+.frame{display:block;margin-top:6px;background:#2a3f73;color:#fff;border-radius:999px;padding:6px 8px}
+.level:not(.on) .frame{background:#fff;color:var(--ink);border:2px solid #d5d8df}
+.note{font-size:14px;color:#5c6b8a}
+.shop{margin-top:10px;display:flex;gap:10px;align-items:center;background:#fff;border-radius:16px;padding:8px 12px;border:3px solid #d5d8df}
+.shop img{height:42px}
+.switch{width:64px;height:34px;border-radius:999px;background:#c5c9d4;position:relative}
+.switch.on{background:#2f9e4f}
+.switch i{position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:50%;background:#fff;transition:left .2s}
+.switch.on i{left:33px}
+.hint{background:#2a3f73;color:#fff;border-radius:20px;padding:12px;width:100%;max-height:100%}
+.hint h3{margin:0 0 8px}
+.model{background:#fff8df;color:var(--ink);border-radius:12px;padding:8px;font-size:28px;text-align:center}
+.split{display:flex;gap:8px;align-items:center;justify-content:center}
+.chip{background:#f0a202;color:#fff;border-radius:12px;padding:8px 14px;font-size:24px;font-weight:700}
+.chip.dark{background:#2a3f73}
+.yay{background:#2f9e4f;color:#fff;font-size:clamp(26px,4vw,42px);border-radius:999px;padding:10px 22px;border:4px solid #fff;text-align:center}
+.float-card{width:clamp(140px,26vh,240px);margin:0;background:#fff;border:8px solid #fff;border-radius:18px;text-align:center;font-weight:700;padding:0;flex:0 0 auto;position:relative;overflow:hidden;box-shadow:0 10px 18px #24315c2e}
+.float-card img{width:100%;height:auto;display:block}
+.float-card:after,.pic-only:after,.back.face:after{content:"";position:absolute;left:0;right:0;top:0;height:42%;background:linear-gradient(#ffffffc4,#ffffff00);pointer-events:none}
+.help-btn{background:#fff;border-radius:999px;min-height:48px;padding:8px 14px;font-weight:700;border:3px solid var(--ink)}
+.q{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.q b{background:#e23b3b;color:#fff;border-radius:10px;padding:8px}
+.q b:nth-child(4n+3){background:#f0a202}
+.q b:nth-child(4n+1){background:#3d6fd6}
+.q b:nth-child(4n){background:#2f9e4f}
+.q span{background:#fff;color:var(--ink);border-radius:10px;padding:8px}
+.tiles{display:grid;grid-template-columns:repeat(4,clamp(52px,8vh,74px));gap:8px;justify-content:center}
+.tile{height:clamp(48px,7.4vh,68px);border-radius:14px;background:#fff8df;border:4px solid #2a3f73;font-size:clamp(20px,3vh,26px);font-weight:700;color:var(--ink)}
+.tile.bad{animation:wiggle .25s}
+.pic-only{width:clamp(150px,28vh,240px);background:#fff;border:8px solid #fff;border-radius:18px;padding:0;text-align:center;flex:0 0 auto;position:relative;overflow:hidden;box-shadow:0 10px 18px #24315c2e}
+.pic-only img{width:100%;height:auto}
+.strats{display:flex;gap:8px;align-items:stretch}
+.strat{width:clamp(124px,17vh,168px);border-radius:16px;overflow:hidden;background:#fff;border:4px solid #d5d8df;padding:0;flex:0 0 auto;position:relative}
+.fit .float-card{width:108px}
+.strat.key{border-color:#3d8ee8}
+.strat.show{border-color:#e0b43a}
+.strat.way{border-color:#2f9e4f}
+.strat.on{outline:4px solid #0b57d0}
+.strat.done{box-shadow:0 0 0 3px #2f9e4f}
+.strat img{width:100%;height:auto;display:block}
+.strat .pip{position:absolute;left:16.5%;top:26%;width:20%;height:33%;object-fit:contain;border-radius:50%;background:#fff8e6}
+.strat .tick{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:50%;background:#2f9e4f;color:#fff;font-size:18px;line-height:28px;text-align:center}
+.got{background:#2f9e4f;color:#fff;border-radius:999px;min-height:52px;padding:8px 22px;font-weight:700;font-size:22px;border:4px solid #fff}
+.word-set{flex:1 1 100%;display:flex;justify-content:flex-end;align-items:center;gap:8px;background:#2a3f73;color:#fff;border-radius:999px;padding:4px 8px 4px 14px;font-weight:700}
+.word-set[hidden]{display:none}
+.word-set input{border:0;border-radius:999px;min-height:36px;padding:4px 12px;font:inherit;width:min(42vw,220px);color:var(--ink)}
+.count-pill{background:#fff;border-radius:999px;padding:8px 14px;font-weight:700;margin:0}
+.nav-btn{background:#2a3f73;color:#fff;border-radius:999px;min-height:44px;padding:8px 14px;font-weight:700}
+.rounds{display:flex;gap:8px}
+.round-pick{flex:1;background:#fff;border:3px solid #d5d8df;border-radius:14px;min-height:48px;font-weight:700}
+.round-pick.on{border-color:#f6c445;background:#fff8df}
+.nav-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.album-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.slot{background:#fff;border-radius:16px;padding:6px;text-align:center;font-size:14px;font-weight:700;color:var(--ink);box-shadow:0 4px 0 #e4e7ee}
+.slot img{width:100%;height:auto;aspect-ratio:180/240;object-fit:contain;border-radius:12px;background:#fff}
+.slot.wait{color:#8b93a7}
+.slot.wait img{filter:grayscale(1);opacity:.45}
+.how p,.sess{text-align:left;font-size:16px;line-height:1.35}
+.sess{background:#fff;border-radius:12px;padding:8px 10px;margin-top:6px}
+.week{margin-top:10px}
+.play-btn.slim{font-size:22px;padding:8px 16px;min-width:0;box-shadow:0 4px 0 #1c6b34}
+.cars > div{overflow:visible}
+.stand-aim{position:absolute;left:50%;bottom:92%;width:4px;height:4px}
+.stood{position:absolute;bottom:48%;width:58%;height:auto;z-index:6;border-radius:8px;background:#fff;box-shadow:0 8px 12px #24315c40}
+.find-board{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px}
+.find-row{display:flex;gap:8px;justify-content:center;align-items:flex-end;width:100%}
+.find-card{flex:1 1 0;max-width:148px;min-width:0;aspect-ratio:432/640;border:0;padding:0;background:transparent;position:relative;perspective:600px}
+.find-card .inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .45s}
+.find-card.down .inner{transform:rotateY(180deg)}
+.find-card .face,.find-card .backface{position:absolute;inset:0;border-radius:12px;overflow:hidden;backface-visibility:hidden;box-shadow:0 8px 14px #24315c33}
+.find-card .face{background:#fff}
+.find-card .face img{width:100%;height:100%;object-fit:contain;background:#fff}
+.find-card .backface img{width:62%;height:auto;object-fit:contain;background:transparent}
+.find-card .backface{background:#e23b3b;transform:rotateY(180deg);display:flex;align-items:center;justify-content:center}
+.find-card .num{position:absolute;left:4px;top:4px;background:#2a3f73;color:#fff;border-radius:999px;min-width:22px;height:22px;line-height:22px;font-size:13px;font-weight:700}
+.find-card.deal{animation:deal-in .5s ease-out both}
+.turns{display:flex;gap:8px}
+.turn{display:flex;align-items:center;gap:6px;background:#fff;border:3px solid #d5d8df;border-radius:999px;padding:4px 10px 4px 4px;font-weight:700}
+.turn.on{border-color:#f6c445;background:#fff8df}
+.turn img{width:36px;height:36px;object-fit:contain}
+.talk{position:absolute;z-index:9;max-width:230px;background:#fff;border-radius:18px;padding:10px 14px;font-weight:700;box-shadow:0 4px 0 #d5d8df}
+.talk.pig{left:18%;bottom:34%}
+.talk.pup{right:26%;top:22%}
+.talk[hidden]{display:none}
+.over{background:#fffaf2;border:6px solid #e23b3b;border-radius:24px;padding:16px;text-align:center;max-width:520px}
+.ask{background:#e23b3b;color:#fff;border-radius:999px;padding:8px 18px;font-size:clamp(22px,3vw,34px);border:4px solid #fff;font-weight:700}
+@keyframes deal-in{from{transform:translateY(-36px);opacity:0}to{transform:none;opacity:1}}
+body[data-screen="award"] .world{padding-bottom:26vh}
+body[data-screen="award"] .world.sheet #stage{margin:8px 18% 0 16%}
+.tickets{text-align:center}
+.mystery{display:flex;gap:16px;justify-content:center;margin-top:12px}
+.mystery button{background:transparent}
+.mystery img{width:min(22vw,180px)}
+.faces{display:flex;gap:18px;justify-content:center}
+.faces .face{width:clamp(88px,16vh,120px);height:clamp(88px,16vh,120px);border-radius:50%;border:6px solid #fff;font-size:clamp(44px,8vh,64px);box-shadow:0 6px 0 #d5d8df}
+.faces .face.yes{background:#2f9e4f}
+.faces .face.ok{background:#f6c445}
+.faces .face.no{background:#3d6fd6}
+.caption{font-weight:700;font-size:22px}
+.reveal{background:#fff8df;border-radius:16px;padding:12px;font-size:24px;font-weight:700}
+@media (max-height:780px){
+  .back{max-width:150px}
+  .dad button{font-size:14px;padding:6px 8px}
+  .level img{height:36px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+@keyframes wiggle{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* Review v3: one upright card per carriage, aligned wheels and a smaller engine. */
+.engine{width:22%;max-height:27vh;object-fit:contain;object-position:bottom}
+.cars{align-items:flex-end;gap:3px;padding-left:5px}
+.car-unit{position:relative;min-width:0}
+.stood{left:22%;bottom:53%;width:56%;height:auto;aspect-ratio:5/7;object-fit:contain;box-shadow:0 2px 5px #24315c40;z-index:5}
+.car-owner{position:absolute;bottom:21%;left:16%;right:16%;text-align:center;font-size:clamp(7px,1vw,12px);background:#fff7df;color:#24315c;z-index:8;border-radius:3px}
+.carriage{position:relative;z-index:6}
+.world{padding-bottom:18vh}
+.find-row{max-height:48vh}
+.find-card{max-height:37vh}
+.brand{font:11px system-ui;position:fixed;bottom:2px;left:6px;z-index:15;background:#fff9;padding:2px 6px;border-radius:4px}
+[hidden]{display:none!important}
+/* Review 3.1: stable card geometry and a distinct parent recording bar. */
+[hidden]{display:none!important}
+.find-card .face,.find-card .backface{width:100%;height:100%;border:3px solid #fff;border-radius:12px;-webkit-backface-visibility:hidden}
+.find-card .face{transform:rotateY(0deg)}
+.find-card{flex:0 1 148px;width:148px;min-width:44px;max-height:none}
+.find-row{align-items:center;max-height:none}
+.dad{flex:1 1 100%;border-radius:14px;padding:8px 12px;flex-wrap:wrap;justify-content:center}
+.dad strong{flex:1 1 100%;text-align:center;font-size:15px}
+.dad button{min-height:44px;border:2px solid transparent}
+.dad button:disabled{opacity:.45;cursor:default}
+#not-yet{background:#fff0db}
+.response-label{display:flex;flex-direction:column;gap:5px;background:#fff8df;border-radius:10px;padding:8px;max-width:100%;font-size:14px}
+.response-label input{font:inherit;padding:8px;border:2px solid #a7aec1;border-radius:7px;width:100%;min-width:250px}
+.home-heading{margin:0;background:#fff9;padding:8px 14px;border-radius:12px;font-size:24px}
+.home-rounds{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.round-launch{background:#fffaf0;border:4px solid #edb94c;border-radius:16px;padding:14px 18px;color:#24315c;min-width:150px;min-height:90px;display:flex;flex-direction:column;gap:6px}
+.round-launch strong{font-size:23px}
+.round-launch span{font-size:16px}
+body[data-screen="home"] #stage{margin:10px 18% 0 8%;align-items:flex-start;padding-top:12px}
+body[data-screen="home"] .play-main{gap:9px;width:100%}
+.repair-art{display:block;width:100%;aspect-ratio:730/620;background-image:url('assets/repair-cards-web.webp');background-size:193.69863% 322.58065%;background-repeat:no-repeat}
+.repair-key{background-position:50.1462% 3.6232%}
+.repair-show{background-position:50.1462% 49.0580%}
+.repair-way{background-position:50.1462% 96.3768%}
+.strat .tick{top:auto;bottom:0;right:0;width:22px;height:22px;line-height:22px;font-size:15px}
+.strategy-label{display:block;font-size:14px;padding:5px;min-height:42px}
+.strat:disabled{opacity:.6;cursor:default}
+.strats{position:relative;z-index:10;flex-wrap:wrap;justify-content:center}
+.strat{width:clamp(100px,13vw,145px)}
+.strat img{pointer-events:none;max-height:150px;object-fit:contain}
+.lesson{max-width:760px;line-height:1.4}
+.lesson .nav-btn{margin:6px}
+body[data-screen="r3"] #stage{margin-right:8px;overflow:auto;align-items:flex-start}
+body[data-screen="r3"] .booth,body[data-screen="r3"] .pup{opacity:.18}
+body[data-screen="r3"] .playfield{grid-template-columns:minmax(0,1fr) minmax(180px,260px);align-items:start;padding:12px}
+body[data-screen="r2"] .rowish{flex-wrap:wrap}
+body[data-screen="r2"] .pic-only{width:150px}
+.talk{pointer-events:none}
+body[data-screen="r1"] .talk{left:auto;bottom:auto;right:2%;top:35%;max-width:21%;font-size:16px}
+body[data-screen="r3"] .talk{display:none}
+.mystery img{width:min(33vw,330px)}
+.slot img{aspect-ratio:360/220}
+.album-grid{grid-template-columns:repeat(3,1fr)}
+body[data-screen="home"] #stage{overflow:auto}
+@media(max-width:700px){.title{min-width:150px}.ticket-pill{font-size:14px}.dad button{font-size:12px}.strat{width:95px}body[data-screen="r3"] .playfield{display:block}.play-side{margin-top:12px}.album-grid{grid-template-columns:repeat(2,1fr)}.find-row{gap:4px}.response-label input{min-width:180px}}
+
+
+/* Review 3.3: cards touch the carriage rim; only the bottom edge is tucked in. */
+.stood{bottom:94%;z-index:5}
+.ticket-pill{flex-wrap:wrap;max-width:310px;font-size:15px}.ticket-pill .game-ticket-count{width:100%;text-align:center;font-size:12px}
+.round3-instruction{background:#fff8e8;border:3px solid #e5b748;border-radius:12px;padding:9px 12px;margin:0;line-height:1.35;font-size:17px;text-align:center}
+.response-form{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;background:#fff8df;border-radius:12px;padding:7px;width:100%}.response-form .response-label{padding:0}.response-form #note-status{width:100%;font-size:13px;text-align:center}
+.word-set{border-radius:12px;flex-wrap:wrap}.word-set #word-status{font-size:12px}
+.raw-records>summary,.sess>summary,.ticket-reset>summary{cursor:pointer;font-weight:bold;padding:10px;border-radius:8px;background:#eef2f8}.raw-records{margin:16px 0}.progress-summary{background:#fff;border-radius:16px;padding:16px}.summary-headline{font-size:21px!important;font-weight:bold}.support-bars{max-width:550px}.support-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.support-row meter{width:100%;height:22px}
+.awaiting-card .find-card:not(.gone),.awaiting-strategy .strat:not(.done){animation:choose-wiggle 7s ease-in-out 2s infinite}
+@keyframes choose-wiggle{0%,12%,100%{transform:rotate(0)}2%,6%,10%{transform:rotate(-3deg)}4%,8%{transform:rotate(3deg)}}
+#celebration{position:fixed;inset:0;pointer-events:none;z-index:30;overflow:hidden}#celebration i{position:absolute;width:9px;height:9px;border-radius:50%;animation:burst 1.2s ease-out both;box-shadow:0 0 6px currentColor}
+@keyframes burst{0%{transform:translate(0,0) scale(.4);opacity:0}10%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.5);opacity:0}}
+@media(prefers-reduced-motion:reduce){.awaiting-card .find-card:not(.gone),.awaiting-strategy .strat:not(.done){animation:none;outline:3px solid #e5b748}}
+body[data-screen="r3"] .play-main{gap:8px}body[data-screen="r3"] .fit .float-card{width:85px}.response-form .nav-btn{min-height:40px}
+
+
+/* Keep collected cards in their own train area, clear of choices. */
+.stood{height:12vh;max-height:110px;width:auto;max-width:56%;object-fit:contain;left:50%;transform:translateX(-50%);bottom:94%}
+body[data-screen="r2"] #stage,body[data-screen="r3"] #stage{overflow:auto;align-items:flex-start;padding:6px}
+body[data-screen="r2"] .playfield,body[data-screen="r3"] .playfield{height:auto;min-height:100%;align-items:start}
+body[data-screen="r2"] .play-main{display:grid;grid-template-columns:minmax(100px,170px) minmax(240px,1fr);align-items:center;gap:10px}
+body[data-screen="r2"] .pic-only{grid-column:1;width:100%;max-width:170px}
+body[data-screen="r2"] .play-main>.nav-btn{grid-column:1;grid-row:2}
+body[data-screen="r2"] .tiles{grid-column:2;grid-row:1 / span 2;grid-template-columns:repeat(4,minmax(48px,1fr))}
+.sound-summary{border:2px solid #d6dfeb;border-radius:12px;padding:12px;margin:12px 0}.sound-summary h4{font-size:21px;margin:0 0 10px}.sound-table-wrap{overflow:auto}.sound-table{width:100%;border-collapse:collapse;font-size:14px}.sound-table th,.sound-table td{padding:9px 6px;border-bottom:1px solid #d6dfeb;text-align:left}.sound-table thead,.sound-table tr:first-child{background:#edf2f8}
+@media(max-width:900px){body[data-screen="r2"] .playfield{grid-template-columns:1fr}body[data-screen="r2"] .play-side{justify-self:center}body[data-screen="r3"] .playfield{display:block}body[data-screen="r3"] .play-main.rowish{flex-wrap:wrap}body[data-screen="r3"] .strats{flex-wrap:wrap;justify-content:center}}
+@media(max-width:540px){body[data-screen="r2"] #stage,body[data-screen="r3"] #stage{margin-right:8px}body[data-screen="r2"] .play-main{grid-template-columns:1fr}body[data-screen="r2"] .pic-only{justify-self:center;max-width:90px}body[data-screen="r2"] .tiles{grid-column:1;grid-row:3}body[data-screen="r2"] .play-main>.nav-btn{justify-self:center}.sound-table{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="world">
+  <img class="backdrop" src="assets/bg-station.webp" alt="">
+  <img class="booth" src="assets/booth.webp" alt="">
+  <img class="pup" src="assets/pup.webp" alt="">
+  <img class="pig" id="pig" src="assets/pig.webp" alt="">
+  <div class="train" id="train" aria-hidden="true"></div>
+  <header class="hud">
+    <button type="button" class="grown-btn" id="grown">Choose rounds &amp; settings</button>
+    <div class="title" id="title">All Aboard!</div>
+    <button type="button" class="nav-btn" id="pause-game" hidden>Save &amp; home</button>
+    <div class="ticket-pill" id="tickets" aria-live="polite"></div>
+    <div class="dad" id="dad" hidden>
+      <strong id="dad-prompt">Dad: choose one result after each turn.</strong>
+      <button type="button" id="own">On his own</button>
+      <button type="button" id="with">With help</button>
+      <button type="button" id="split">Needed sounds separated</button>
+      <button type="button" id="not-yet">Not yet</button>
+      <button type="button" id="tips">Tips</button>
+    </div>
+    <form class="word-set" id="word-set" hidden><label for="word-box">Practice word</label> <input id="word-box" type="text" maxlength="40" aria-label="Word for Round 3"><button type="submit" class="nav-btn" id="set-word">Set word</button><span id="word-status" role="status"></span></form>
+  </header>
+  <div id="stage"></div>
+  <div id="celebration" aria-hidden="true"></div>
+  <div id="talk" class="talk pup" hidden></div>
+</div>
+<p id="live" class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden" role="status" aria-live="polite"></p>
+<script src="words.js"></script>
+<script src="collect.js"></script>
+<script src="summary.js"></script>
+<script src="feedback.js"></script>
+<script src="game.js"></script>
+<div class="brand">Whiz Kids Therapy · Review 3.4 · Saves on this device</div></body>
+</html>
+

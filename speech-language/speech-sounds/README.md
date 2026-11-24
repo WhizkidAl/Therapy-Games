@@ -46,6 +46,10 @@ The database currently restricts **each clinician to their own child records**; 
 
 The site is public *code*, not public clinical records. Data go via authenticated Supabase REST with RLS. Use only pseudonymous codes within the application until privacy/governance arrangements are reviewed.
 
+## All Aboard!
+
+`all-aboard/` is the station game for one contrast train. A parent records how each try went. Tickets stay in the browser. It does not sign in and it does not call Supabase. Status: **built**.
+
 ## Next engineering work
 
 - Complete live clinician login and one-session smoke test on the published URL.

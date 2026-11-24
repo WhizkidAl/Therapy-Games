@@ -1,0 +1,21 @@
+-- All Aboard v2 results are kept on the tablet (localStorage key all-aboard-v2).
+-- This file is a proposal only. Do not run it until a clinician table is agreed.
+-- The page does not connect to Supabase. The Multiple Oppositions workspace uses a
+-- different, clinician-only sign-in and must not be reused for this child game.
+
+-- create table if not exists all_aboard_sessions (
+--   id uuid primary key default gen_random_uuid(),
+--   owner_id uuid not null,
+--   played_at timestamptz not null default now(),
+--   level text not null,
+--   train_set text not null,
+--   tickets integer not null,
+--   shop_opt_in boolean not null default false,
+--   rating text,
+--   attempts jsonb not null
+-- );
+--
+-- alter table all_aboard_sessions enable row level security;
+-- Suggested policy: the signed-in clinician can read and insert only their own rows.
+-- Do not store a child's name in attempts. Each attempt is
+-- { round, word, level, support, splitOff, strategy, at }.
